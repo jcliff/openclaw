@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "node:path";
 import { lookupContextTokens } from "../../agents/context.js";
 import { DEFAULT_CONTEXT_TOKENS } from "../../agents/defaults.js";
 import { resolveModelAuthMode } from "../../agents/model-auth.js";
@@ -599,6 +600,27 @@ export async function runReplyAgent(params: {
             }
           : undefined,
       });
+    }
+
+    // Context snapshot: write the full system prompt to disk for audit/inspection.
+    // Enabled via OPENCLAW_CONTEXT_SNAPSHOTS=1 or diagnostics.contextSnapshots in config.
+    const contextSnapshotsEnabled =
+      process.env.OPENCLAW_CONTEXT_SNAPSHOTS === "1" ||
+      process.env.OPENCLAW_CONTEXT_SNAPSHOTS === "true";
+    if (contextSnapshotsEnabled && runResult.meta?.systemPromptText && sessionKey) {
+      try {
+        const snapshotDir = path.join(
+          process.env.OPENCLAW_CONTEXT_SNAPSHOTS_DIR ||
+            path.join(storePath || "/tmp", "context-snapshots"),
+          sessionKey.replace(/[^a-zA-Z0-9_.-]/g, "_"),
+        );
+        fs.mkdirSync(snapshotDir, { recursive: true });
+        const ts = new Date().toISOString().replace(/[:.]/g, "-");
+        const snapshotPath = path.join(snapshotDir, `${ts}.txt`);
+        fs.writeFileSync(snapshotPath, runResult.meta.systemPromptText, "utf-8");
+      } catch {
+        // Best-effort: don't fail the turn if snapshot write fails
+      }
     }
 
     const responseUsageRaw =

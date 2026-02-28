@@ -31,6 +31,7 @@ export type EmbeddedRunAttemptResult = {
   promptError: unknown;
   sessionIdUsed: string;
   systemPromptReport?: SessionSystemPromptReport;
+  systemPromptText?: string;
   messagesSnapshot: AgentMessage[];
   assistantTexts: string[];
   toolMetas: Array<{ toolName: string; meta?: string }>;

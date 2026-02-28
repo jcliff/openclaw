@@ -845,6 +845,7 @@ export async function runEmbeddedPiAgent(
                   model: model.id,
                 },
                 systemPromptReport: attempt.systemPromptReport,
+                systemPromptText: attempt.systemPromptText,
                 error: { kind, message: errorText },
               },
             };
@@ -871,6 +872,7 @@ export async function runEmbeddedPiAgent(
                     model: model.id,
                   },
                   systemPromptReport: attempt.systemPromptReport,
+                  systemPromptText: attempt.systemPromptText,
                   error: { kind: "role_ordering", message: errorText },
                 },
               };
@@ -899,6 +901,7 @@ export async function runEmbeddedPiAgent(
                     model: model.id,
                   },
                   systemPromptReport: attempt.systemPromptReport,
+                  systemPromptText: attempt.systemPromptText,
                   error: { kind: "image_size", message: errorText },
                 },
               };
@@ -1105,6 +1108,7 @@ export async function runEmbeddedPiAgent(
                 agentMeta,
                 aborted,
                 systemPromptReport: attempt.systemPromptReport,
+                systemPromptText: attempt.systemPromptText,
               },
               didSendViaMessagingTool: attempt.didSendViaMessagingTool,
               messagingToolSentTexts: attempt.messagingToolSentTexts,
@@ -1137,6 +1141,7 @@ export async function runEmbeddedPiAgent(
               agentMeta,
               aborted,
               systemPromptReport: attempt.systemPromptReport,
+              systemPromptText: attempt.systemPromptText,
               // Handle client tool calls (OpenResponses hosted tools)
               stopReason: attempt.clientToolCall ? "tool_calls" : undefined,
               pendingToolCalls: attempt.clientToolCall

@@ -35,6 +35,7 @@ export type EmbeddedPiRunMeta = {
   agentMeta?: EmbeddedPiAgentMeta;
   aborted?: boolean;
   systemPromptReport?: SessionSystemPromptReport;
+  systemPromptText?: string;
   error?: {
     kind:
       | "context_overflow"

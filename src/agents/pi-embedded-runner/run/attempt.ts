@@ -1515,6 +1515,7 @@ export async function runEmbeddedAttempt(
         promptError,
         sessionIdUsed,
         systemPromptReport,
+        systemPromptText: systemPromptText ?? undefined,
         messagesSnapshot,
         assistantTexts,
         toolMetas: toolMetasNormalized,
