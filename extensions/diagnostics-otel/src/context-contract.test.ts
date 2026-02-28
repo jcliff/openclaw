@@ -1,11 +1,6 @@
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { DiagnosticUsageEvent } from "openclaw/plugin-sdk";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 // ---------------------------------------------------------------------------
-// 1. Contract: DiagnosticEventPayload.systemPromptReport shape
+// 1. Contract: DiagnosticUsageEvent.systemPromptReport shape
 // ---------------------------------------------------------------------------
 // We import the actual type and verify a conforming object compiles + has the
 // fields the OTLP extension reads.  This catches upstream type renames/removals.
