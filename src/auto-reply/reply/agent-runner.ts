@@ -581,6 +581,23 @@ export async function runReplyAgent(params: {
         },
         costUsd,
         durationMs: Date.now() - runStartedAt,
+        systemPromptReport: runResult.meta?.systemPromptReport
+          ? {
+              systemPrompt: runResult.meta.systemPromptReport.systemPrompt,
+              injectedWorkspaceFiles: runResult.meta.systemPromptReport.injectedWorkspaceFiles.map(
+                (f) => ({
+                  name: f.name,
+                  injectedChars: f.injectedChars,
+                  truncated: f.truncated,
+                }),
+              ),
+              skills: runResult.meta.systemPromptReport.skills,
+              tools: {
+                listChars: runResult.meta.systemPromptReport.tools.listChars,
+                schemaChars: runResult.meta.systemPromptReport.tools.schemaChars,
+              },
+            }
+          : undefined,
       });
     }
 

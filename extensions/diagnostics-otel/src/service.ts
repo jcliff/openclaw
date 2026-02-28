@@ -432,6 +432,32 @@ export function createDiagnosticsOtelService(): OpenClawPluginService {
           "openclaw.tokens.total": usage.total ?? 0,
         };
 
+        if (evt.systemPromptReport) {
+          const report = evt.systemPromptReport;
+          spanAttrs["openclaw.context.system_prompt_chars"] = report.systemPrompt.chars;
+          spanAttrs["openclaw.context.project_context_chars"] =
+            report.systemPrompt.projectContextChars;
+          spanAttrs["openclaw.context.non_project_context_chars"] =
+            report.systemPrompt.nonProjectContextChars;
+          spanAttrs["openclaw.context.skills_chars"] = report.skills.promptChars;
+          spanAttrs["openclaw.context.tools_list_chars"] = report.tools.listChars;
+          spanAttrs["openclaw.context.tools_schema_chars"] = report.tools.schemaChars;
+
+          const sortedFiles = [...report.injectedWorkspaceFiles].sort(
+            (a, b) => b.injectedChars - a.injectedChars,
+          );
+          const topFiles = sortedFiles.slice(0, 10);
+          spanAttrs["openclaw.context.file_count"] = report.injectedWorkspaceFiles.length;
+          spanAttrs["openclaw.context.file_total_chars"] = report.injectedWorkspaceFiles.reduce(
+            (sum, f) => sum + f.injectedChars,
+            0,
+          );
+          for (const file of topFiles) {
+            const sanitizedName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_").slice(0, 64);
+            spanAttrs[`openclaw.context.file.${sanitizedName}`] = file.injectedChars;
+          }
+        }
+
         const span = spanWithDuration("openclaw.model.usage", spanAttrs, evt.durationMs);
         span.end();
       };

@@ -33,6 +33,16 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
     limit?: number;
     used?: number;
   };
+  systemPromptReport?: {
+    systemPrompt: { chars: number; projectContextChars: number; nonProjectContextChars: number };
+    injectedWorkspaceFiles: Array<{
+      name: string;
+      injectedChars: number;
+      truncated: boolean;
+    }>;
+    skills: { promptChars: number; entries: Array<{ name: string; blockChars: number }> };
+    tools: { listChars: number; schemaChars: number };
+  };
   costUsd?: number;
   durationMs?: number;
 };
