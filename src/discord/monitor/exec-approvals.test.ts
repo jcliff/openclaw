@@ -16,7 +16,9 @@ import {
   type ExecApprovalButtonContext,
 } from "./exec-approvals.js";
 
-const STORE_PATH = path.join(os.tmpdir(), "openclaw-exec-approvals-test.json");
+// Use a unique temp dir per run to avoid stale-file conflicts between users/CI runs.
+const TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw-exec-approvals-"));
+const STORE_PATH = path.join(TEST_DIR, "store.json");
 
 const writeStore = (store: Record<string, unknown>) => {
   fs.writeFileSync(STORE_PATH, `${JSON.stringify(store, null, 2)}\n`, "utf8");

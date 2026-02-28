@@ -9,16 +9,24 @@ import {
   searchStickers,
 } from "./sticker-cache.js";
 
-// Mock the state directory to use a temp location
+// Use a unique temp dir per run to avoid stale-file conflicts between users/CI runs.
+// vi.hoisted runs before vi.mock hoisting, so the temp dir is available in the factory.
+const { TEST_STATE_DIR } = vi.hoisted(() => {
+  const _fs = require("node:fs") as typeof import("node:fs");
+  const _os = require("node:os") as typeof import("node:os");
+  const _path = require("node:path") as typeof import("node:path");
+  return { TEST_STATE_DIR: _fs.mkdtempSync(_path.join(_os.tmpdir(), "openclaw-sticker-cache-")) };
+});
+
 vi.mock("../config/paths.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../config/paths.js")>();
   return {
     ...actual,
-    STATE_DIR: "/tmp/openclaw-test-sticker-cache",
+    STATE_DIR: TEST_STATE_DIR,
   };
 });
 
-const TEST_CACHE_DIR = "/tmp/openclaw-test-sticker-cache/telegram";
+const TEST_CACHE_DIR = path.join(TEST_STATE_DIR, "telegram");
 const TEST_CACHE_FILE = path.join(TEST_CACHE_DIR, "sticker-cache.json");
 
 describe("sticker-cache", () => {

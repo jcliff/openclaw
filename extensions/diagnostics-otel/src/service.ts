@@ -1,8 +1,24 @@
 import { metrics, trace, SpanStatusCode } from "@opentelemetry/api";
 import type { SeverityNumber } from "@opentelemetry/api-logs";
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-proto";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+import { OTLPLogExporter as OTLPLogExporterProto } from "@opentelemetry/exporter-logs-otlp-proto";
+import { OTLPMetricExporter as OTLPMetricExporterProto } from "@opentelemetry/exporter-metrics-otlp-proto";
+import { OTLPTraceExporter as OTLPTraceExporterProto } from "@opentelemetry/exporter-trace-otlp-proto";
+
+// http/json exporters — types may not be available at dev time but packages
+// are installed at runtime via install-diagnostics-otel-deps.sh.
+// Using dynamic imports to avoid tsc errors.
+async function loadHttpExporters() {
+  const [trace, metrics, logs] = await Promise.all([
+    import("@opentelemetry/exporter-trace-otlp-http" as string),
+    import("@opentelemetry/exporter-metrics-otlp-http" as string),
+    import("@opentelemetry/exporter-logs-otlp-http" as string),
+  ]);
+  return {
+    OTLPTraceExporter: trace.OTLPTraceExporter,
+    OTLPMetricExporter: metrics.OTLPMetricExporter,
+    OTLPLogExporter: logs.OTLPLogExporter,
+  };
+}
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchLogRecordProcessor, LoggerProvider } from "@opentelemetry/sdk-logs";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
@@ -78,9 +94,32 @@ export function createDiagnosticsOtelService(): OpenClawPluginService {
       }
 
       const protocol = otel.protocol ?? process.env.OTEL_EXPORTER_OTLP_PROTOCOL ?? "http/protobuf";
-      if (protocol !== "http/protobuf") {
-        ctx.logger.warn(`diagnostics-otel: unsupported protocol ${protocol}`);
+      const supportedProtocols = ["http/protobuf", "http/json"];
+      if (!supportedProtocols.includes(protocol)) {
+        ctx.logger.warn(
+          `diagnostics-otel: unsupported protocol ${protocol} (supported: ${supportedProtocols.join(", ")})`,
+        );
         return;
+      }
+      const useJson = protocol === "http/json";
+      ctx.logger.info(
+        `diagnostics-otel: starting (protocol=${protocol}, endpoint=${otel.endpoint ?? "default"}, service=${otel.serviceName ?? DEFAULT_SERVICE_NAME})`,
+      );
+
+      // Select exporters based on protocol
+      let OTLPTraceExporter: typeof OTLPTraceExporterProto;
+      let OTLPMetricExporter: typeof OTLPMetricExporterProto;
+      let OTLPLogExporter: typeof OTLPLogExporterProto;
+
+      if (useJson) {
+        const http = await loadHttpExporters();
+        OTLPTraceExporter = http.OTLPTraceExporter;
+        OTLPMetricExporter = http.OTLPMetricExporter;
+        OTLPLogExporter = http.OTLPLogExporter;
+      } else {
+        OTLPTraceExporter = OTLPTraceExporterProto;
+        OTLPMetricExporter = OTLPMetricExporterProto;
+        OTLPLogExporter = OTLPLogExporterProto;
       }
 
       const endpoint = normalizeEndpoint(otel.endpoint ?? process.env.OTEL_EXPORTER_OTLP_ENDPOINT);

@@ -1,4 +1,6 @@
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawConfig, ConfigFileSnapshot } from "../config/types.openclaw.js";
@@ -133,7 +135,8 @@ const { updateCommand, registerUpdateCli, updateStatusCommand, updateWizardComma
   await import("./update-cli.js");
 
 describe("update-cli", () => {
-  const fixtureRoot = "/tmp/openclaw-update-tests";
+  // Use a unique temp dir per run to avoid stale-file conflicts between users/CI runs.
+  const fixtureRoot = fsSync.mkdtempSync(path.join(os.tmpdir(), "openclaw-update-"));
   let fixtureCount = 0;
 
   const createCaseDir = (prefix: string) => {
