@@ -27,6 +27,7 @@ import { ParentBasedSampler, TraceIdRatioBasedSampler } from "@opentelemetry/sdk
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import type { DiagnosticEventPayload, OpenClawPluginService } from "openclaw/plugin-sdk";
 import { onDiagnosticEvent, redactSensitiveText, registerLogTransport } from "openclaw/plugin-sdk";
+import { sendContextSnapshot } from "./context-snapshot.js";
 
 const DEFAULT_SERVICE_NAME = "openclaw";
 
@@ -679,6 +680,10 @@ export function createDiagnosticsOtelService(): OpenClawPluginService {
           switch (evt.type) {
             case "model.usage":
               recordModelUsage(evt);
+              // OC#3 Slice 1: fire-and-forget context snapshot (opt-in)
+              sendContextSnapshot(evt, ctx, serviceName, cfg?.contextSnapshot ?? {}).catch(() => {
+                // already logged inside sendContextSnapshot
+              });
               return;
             case "webhook.received":
               recordWebhookReceived(evt);

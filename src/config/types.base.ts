@@ -201,12 +201,25 @@ export type DiagnosticsCacheTraceConfig = {
   includeSystem?: boolean;
 };
 
+export type DiagnosticsContextSnapshotConfig = {
+  /** Enable per-turn context snapshots posted to Drumbeat /context/snapshot. Default: false. */
+  enabled?: boolean;
+  /** Drumbeat base URL. Default: "http://127.0.0.1:18800" */
+  endpoint?: string;
+  /** Max bytes per file. Default: 65536 (64 KiB) */
+  maxFileSizeBytes?: number;
+  /** Max total payload bytes across all files. Default: 524288 (512 KiB) */
+  maxTotalBytes?: number;
+};
+
 export type DiagnosticsConfig = {
   enabled?: boolean;
   /** Optional ad-hoc diagnostics flags (e.g. "telegram.http"). */
   flags?: string[];
   otel?: DiagnosticsOtelConfig;
   cacheTrace?: DiagnosticsCacheTraceConfig;
+  /** OC#3: per-turn context snapshot POSTed to Drumbeat git blob store. */
+  contextSnapshot?: DiagnosticsContextSnapshotConfig;
 };
 
 export type WebReconnectConfig = {

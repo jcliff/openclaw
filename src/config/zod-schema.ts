@@ -206,6 +206,15 @@ export const OpenClawSchema = z
           })
           .strict()
           .optional(),
+        contextSnapshot: z
+          .object({
+            enabled: z.boolean().optional(),
+            endpoint: z.string().optional(),
+            maxFileSizeBytes: z.number().int().positive().optional(),
+            maxTotalBytes: z.number().int().positive().optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .optional(),
