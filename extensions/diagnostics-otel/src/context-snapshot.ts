@@ -106,23 +106,51 @@ export async function sendContextSnapshot(
     ...(systemPromptText ? { system_prompt_text: systemPromptText } : {}),
   };
 
+  const url = `${endpoint}/context/snapshot`;
+
   try {
     const body = JSON.stringify(payload);
-    const resp = await fetch(`${endpoint}/context/snapshot`, {
+    const bodyBytes = Buffer.byteLength(body, "utf8");
+
+    const resp = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        // Avoid stale keep-alive sockets when Drumbeat restarts.
+        // POST is non-idempotent, so undici may not retry on reset connections.
+        Connection: "close",
+      },
       body,
       signal: AbortSignal.timeout(10_000),
     });
+
     if (!resp.ok) {
+      let respBody = "";
+      try {
+        respBody = (await resp.text()).slice(0, 512);
+      } catch {
+        // ignore
+      }
       ctx.logger.warn(
-        `diagnostics-otel: context snapshot failed: ${resp.status} ${resp.statusText}`,
+        `diagnostics-otel: context snapshot failed: ${resp.status} ${resp.statusText} url=${url} bytes=${bodyBytes}` +
+          (respBody ? ` body=${JSON.stringify(respBody)}` : ""),
       );
     }
   } catch (err) {
     // Non-fatal — snapshot is best-effort
+    const e = err as any;
+    const msg = err instanceof Error ? err.message : String(err);
+    const cause = e?.cause;
+
+    let causeInfo = "";
+    if (cause) {
+      const cmsg = cause instanceof Error ? cause.message : String(cause);
+      const ccode = (cause as any)?.code;
+      causeInfo = ` cause=${ccode ? `${ccode}:` : ""}${cmsg}`;
+    }
+
     ctx.logger.warn(
-      `diagnostics-otel: context snapshot error: ${err instanceof Error ? err.message : String(err)}`,
+      `diagnostics-otel: context snapshot error: ${msg} url=${url}${causeInfo}`,
     );
   }
 }
