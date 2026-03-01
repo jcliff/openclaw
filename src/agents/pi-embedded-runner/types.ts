@@ -36,6 +36,8 @@ export type EmbeddedPiRunMeta = {
   aborted?: boolean;
   systemPromptReport?: SessionSystemPromptReport;
   systemPromptText?: string;
+  /** JSON-serialized per-turn bundle for replay (messages, tool metadata, etc.). */
+  turnBundleJson?: string;
   error?: {
     kind:
       | "context_overflow"

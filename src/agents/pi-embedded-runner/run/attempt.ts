@@ -1508,6 +1508,31 @@ export async function runEmbeddedAttempt(
           });
       }
 
+      const attemptUsage = getUsageTotals();
+
+      let turnBundleJson: string | undefined;
+      try {
+        // v0: store the full per-turn bundle for byte-for-byte replay.
+        // Keep as a single JSON blob to avoid schema churn.
+        turnBundleJson = JSON.stringify({
+          ts: new Date().toISOString(),
+          sessionKey: params.sessionKey ?? null,
+          sessionId: params.sessionId,
+          sessionIdUsed,
+          provider: params.provider,
+          model: params.modelId,
+          systemPromptText: systemPromptText ?? null,
+          // AgentMessage[] as recorded at end-of-turn.
+          messages: messagesSnapshot,
+          toolMetas: toolMetasNormalized,
+          lastToolError: getLastToolError?.() ?? null,
+          usage: attemptUsage ?? null,
+        });
+      } catch {
+        // Best-effort: never fail the attempt due to serialization.
+        turnBundleJson = undefined;
+      }
+
       return {
         aborted,
         timedOut,
@@ -1516,6 +1541,7 @@ export async function runEmbeddedAttempt(
         sessionIdUsed,
         systemPromptReport,
         systemPromptText: systemPromptText ?? undefined,
+        turnBundleJson,
         messagesSnapshot,
         assistantTexts,
         toolMetas: toolMetasNormalized,
@@ -1529,7 +1555,7 @@ export async function runEmbeddedAttempt(
         cloudCodeAssistFormatError: Boolean(
           lastAssistant?.errorMessage && isCloudCodeAssistFormatError(lastAssistant.errorMessage),
         ),
-        attemptUsage: getUsageTotals(),
+        attemptUsage,
         compactionCount: getCompactionCount(),
         // Client tool call detected (OpenResponses hosted tools)
         clientToolCall: clientToolCallDetected ?? undefined,

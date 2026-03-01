@@ -45,6 +45,8 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
   };
   /** Full system prompt text used for the turn (unmodified). */
   systemPromptText?: string;
+  /** JSON-serialized per-turn bundle for replay (messages, tool metadata, etc.). */
+  turnBundleJson?: string;
   costUsd?: number;
   durationMs?: number;
 };

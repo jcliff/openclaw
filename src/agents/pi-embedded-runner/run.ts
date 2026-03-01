@@ -846,6 +846,7 @@ export async function runEmbeddedPiAgent(
                 },
                 systemPromptReport: attempt.systemPromptReport,
                 systemPromptText: attempt.systemPromptText,
+                turnBundleJson: attempt.turnBundleJson,
                 error: { kind, message: errorText },
               },
             };
@@ -873,6 +874,7 @@ export async function runEmbeddedPiAgent(
                   },
                   systemPromptReport: attempt.systemPromptReport,
                   systemPromptText: attempt.systemPromptText,
+                  turnBundleJson: attempt.turnBundleJson,
                   error: { kind: "role_ordering", message: errorText },
                 },
               };
@@ -902,6 +904,7 @@ export async function runEmbeddedPiAgent(
                   },
                   systemPromptReport: attempt.systemPromptReport,
                   systemPromptText: attempt.systemPromptText,
+                  turnBundleJson: attempt.turnBundleJson,
                   error: { kind: "image_size", message: errorText },
                 },
               };
@@ -1109,6 +1112,7 @@ export async function runEmbeddedPiAgent(
                 aborted,
                 systemPromptReport: attempt.systemPromptReport,
                 systemPromptText: attempt.systemPromptText,
+                turnBundleJson: attempt.turnBundleJson,
               },
               didSendViaMessagingTool: attempt.didSendViaMessagingTool,
               messagingToolSentTexts: attempt.messagingToolSentTexts,
@@ -1142,6 +1146,7 @@ export async function runEmbeddedPiAgent(
               aborted,
               systemPromptReport: attempt.systemPromptReport,
               systemPromptText: attempt.systemPromptText,
+              turnBundleJson: attempt.turnBundleJson,
               // Handle client tool calls (OpenResponses hosted tools)
               stopReason: attempt.clientToolCall ? "tool_calls" : undefined,
               pendingToolCalls: attempt.clientToolCall

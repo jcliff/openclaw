@@ -9,7 +9,7 @@
  *   diagnostics.contextSnapshot.enabled: true
  *   diagnostics.contextSnapshot.endpoint: "http://127.0.0.1:18800"  (default)
  *   diagnostics.contextSnapshot.maxFileSizeBytes: 65536              (default 64 KiB)
- *   diagnostics.contextSnapshot.maxTotalBytes: 524288                (default 512 KiB)
+ *   diagnostics.contextSnapshot.maxTotalBytes: 8388608               (default 8 MiB)
  *
  * File content is read from disk using ctx.workspaceDir + file name.
  * The full system prompt text is attached as system_prompt_text when present.
@@ -19,7 +19,9 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DiagnosticEventPayload, OpenClawPluginServiceContext } from "openclaw/plugin-sdk";
 
-type DiagnosticUsageEvent = Extract<DiagnosticEventPayload, { type: "model.usage" }>;
+type DiagnosticUsageEvent = Extract<DiagnosticEventPayload, { type: "model.usage" }> & {
+  turnBundleJson?: string;
+};
 
 export type ContextSnapshotConfig = {
   enabled?: boolean;
@@ -27,7 +29,7 @@ export type ContextSnapshotConfig = {
   endpoint?: string;
   /** Max bytes per file. Default: 64 KiB */
   maxFileSizeBytes?: number;
-  /** Max total payload bytes across all files. Default: 512 KiB */
+  /** Max total payload bytes across all files. Default: 8 MiB */
   maxTotalBytes?: number;
 };
 
@@ -75,7 +77,7 @@ export async function sendContextSnapshot(
 
   const endpoint = snapshotCfg.endpoint ?? "http://127.0.0.1:18800";
   const maxFileBytes = snapshotCfg.maxFileSizeBytes ?? 64 * 1024;
-  const maxTotalBytes = snapshotCfg.maxTotalBytes ?? 512 * 1024;
+  const maxTotalBytes = snapshotCfg.maxTotalBytes ?? 8 * 1024 * 1024;
   const workspaceDir = ctx.workspaceDir ?? "";
 
   const files: Record<string, string> = {};
@@ -95,6 +97,19 @@ export async function sendContextSnapshot(
         files[name] = content;
         totalBytes += Buffer.byteLength(content, "utf8");
       }
+    }
+  }
+
+  if (typeof (evt as any).turnBundleJson === "string" && (evt as any).turnBundleJson.length > 0) {
+    // Always include the per-turn bundle when present; it is the v0 replay primitive.
+    // Bypass maxFileBytes (64 KiB) and instead respect remaining total budget.
+    if (totalBytes < maxTotalBytes) {
+      const remaining = maxTotalBytes - totalBytes;
+      const raw = (evt as any).turnBundleJson as string;
+      const rawBytes = Buffer.byteLength(raw, "utf8");
+      const content = rawBytes > remaining ? raw.slice(0, remaining) + `\n[truncated: ${rawBytes} bytes total]` : raw;
+      files["turn-bundle.json"] = content;
+      totalBytes += Buffer.byteLength(content, "utf8");
     }
   }
 
