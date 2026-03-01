@@ -121,6 +121,13 @@ describe("sendContextSnapshot", () => {
     expect(url).toBe("http://127.0.0.1:18800/context/snapshot");
   });
 
+  it("includes full system prompt text as system_prompt_text", async () => {
+    const systemPromptText = "line 1\nline 2\ntrailing spaces   \n";
+    await sendContextSnapshot(makeEvt({ systemPromptText }), makeCtx(), "alux", { enabled: true });
+    const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string);
+    expect(body.system_prompt_text).toBe(systemPromptText);
+  });
+
   it("reads workspace files listed in systemPromptReport", async () => {
     fs.writeFileSync(path.join(tmpDir, "MEMORY.md"), "# Memory content");
     fs.writeFileSync(path.join(tmpDir, "SOUL.md"), "# Soul content");

@@ -43,6 +43,8 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
     skills: { promptChars: number; entries: Array<{ name: string; blockChars: number }> };
     tools: { listChars: number; schemaChars: number };
   };
+  /** Full system prompt text used for the turn (unmodified). */
+  systemPromptText?: string;
   costUsd?: number;
   durationMs?: number;
 };

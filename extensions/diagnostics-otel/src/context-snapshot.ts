@@ -12,8 +12,7 @@
  *   diagnostics.contextSnapshot.maxTotalBytes: 524288                (default 512 KiB)
  *
  * File content is read from disk using ctx.workspaceDir + file name.
- * The system prompt text is not yet available in the diagnostic event and
- * requires a runtime change (tracked as OC#3 Slice 1b).
+ * The full system prompt text is attached as system_prompt_text when present.
  */
 
 import fs from "node:fs";
@@ -37,6 +36,7 @@ type SnapshotPayload = {
   session_key: string;
   ts: string;
   files: Record<string, string>;
+  system_prompt_text?: string;
 };
 
 /**
@@ -81,6 +81,11 @@ export async function sendContextSnapshot(
   const files: Record<string, string> = {};
   let totalBytes = 0;
 
+  const systemPromptText =
+    typeof evt.systemPromptText === "string" && evt.systemPromptText.length > 0
+      ? evt.systemPromptText
+      : undefined;
+
   if (workspaceDir && evt.systemPromptReport?.injectedWorkspaceFiles) {
     for (const { name } of evt.systemPromptReport.injectedWorkspaceFiles) {
       if (totalBytes >= maxTotalBytes) break;
@@ -98,6 +103,7 @@ export async function sendContextSnapshot(
     session_key: evt.sessionKey,
     ts: new Date().toISOString(),
     files,
+    ...(systemPromptText ? { system_prompt_text: systemPromptText } : {}),
   };
 
   try {
