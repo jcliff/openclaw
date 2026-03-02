@@ -520,6 +520,30 @@ describe("exec notifyOnExit", () => {
   it.each<NotifyNoopCase>(NOOP_NOTIFY_CASES)("$label", runNotifyNoopCase);
 });
 
+describe("exec session key injection", () => {
+  useCapturedEnv([...PATH_SHELL_ENV_KEYS], applyDefaultShellEnv);
+
+  it("injects OPENCLAW_SESSION_KEY into subprocess env when sessionKey is set", async () => {
+    const tool = createTestExecTool({ sessionKey: "agent:main:discord:channel:123" });
+    const result = await executeExecCommand(
+      tool,
+      isWin ? "Write-Output $env:OPENCLAW_SESSION_KEY" : "echo $OPENCLAW_SESSION_KEY",
+    );
+    const text = readNormalizedTextContent(result.content).trim();
+    expect(text).toBe("agent:main:discord:channel:123");
+  });
+
+  it("does not inject OPENCLAW_SESSION_KEY when sessionKey is absent", async () => {
+    const tool = createTestExecTool();
+    const result = await executeExecCommand(
+      tool,
+      isWin ? "Write-Output $env:OPENCLAW_SESSION_KEY" : 'echo "${OPENCLAW_SESSION_KEY:-UNSET}"',
+    );
+    const text = readNormalizedTextContent(result.content).trim();
+    expect(text).toBe("UNSET");
+  });
+});
+
 describe("exec PATH handling", () => {
   useCapturedEnv([...PATH_SHELL_ENV_KEYS], applyDefaultShellEnv);
 

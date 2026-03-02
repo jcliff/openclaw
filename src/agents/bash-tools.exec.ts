@@ -398,6 +398,13 @@ export function createExecTool(
         applyPathPrepend(env, defaultPathPrepend);
       }
 
+      // Inject session identity so exec subprocesses can carry it over the wire
+      // (e.g. the wrapped curl appends X-OC-Session-Key to internal HTTP calls).
+      const sessionKey = defaults?.sessionKey?.trim();
+      if (sessionKey) {
+        env["OPENCLAW_SESSION_KEY"] = sessionKey;
+      }
+
       if (host === "node") {
         return executeNodeHostCommand({
           command: params.command,
