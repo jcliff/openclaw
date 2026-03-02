@@ -32,6 +32,7 @@ export type EmbeddedRunAttemptResult = {
   sessionIdUsed: string;
   systemPromptReport?: SessionSystemPromptReport;
   systemPromptText?: string;
+  systemPromptBaseText?: string;
   /** Full per-turn request bundle for byte-for-byte replay (messages + tool meta, etc.). */
   turnBundleJson?: string;
   messagesSnapshot: AgentMessage[];

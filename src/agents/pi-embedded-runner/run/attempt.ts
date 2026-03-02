@@ -701,6 +701,39 @@ export async function runEmbeddedAttempt(
       skillsPrompt,
       tools,
     });
+    // Capture a base prompt (pre-injection) for diffing. This intentionally excludes
+    // injected workspace files + skills prompt, while keeping runtime/tooling sections.
+    const systemPromptBaseText = buildEmbeddedSystemPrompt({
+      workspaceDir: effectiveWorkspace,
+      defaultThinkLevel: params.thinkLevel,
+      reasoningLevel: params.reasoningLevel ?? "off",
+      extraSystemPrompt: params.extraSystemPrompt,
+      ownerNumbers: params.ownerNumbers,
+      ownerDisplay: ownerDisplay.ownerDisplay,
+      ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
+      reasoningTagHint,
+      heartbeatPrompt: isDefaultAgent
+        ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
+        : undefined,
+      skillsPrompt: undefined,
+      docsPath: docsPath ?? undefined,
+      ttsHint,
+      workspaceNotes,
+      reactionGuidance,
+      promptMode,
+      acpEnabled: params.config?.acp?.enabled !== false,
+      runtimeInfo,
+      messageToolHints,
+      sandboxInfo,
+      tools,
+      modelAliasLines: buildModelAliasLines(params.config),
+      userTimezone,
+      userTime,
+      userTimeFormat,
+      contextFiles: [],
+      memoryCitationsMode: params.config?.memory?.citations,
+    });
+
     const systemPromptOverride = createSystemPromptOverride(appendPrompt);
     let systemPromptText = systemPromptOverride();
 
@@ -1514,20 +1547,25 @@ export async function runEmbeddedAttempt(
       try {
         // v0: store the full per-turn bundle for byte-for-byte replay.
         // Keep as a single JSON blob to avoid schema churn.
-        turnBundleJson = JSON.stringify({
-          ts: new Date().toISOString(),
-          sessionKey: params.sessionKey ?? null,
-          sessionId: params.sessionId,
-          sessionIdUsed,
-          provider: params.provider,
-          model: params.modelId,
-          systemPromptText: systemPromptText ?? null,
-          // AgentMessage[] as recorded at end-of-turn.
-          messages: messagesSnapshot,
-          toolMetas: toolMetasNormalized,
-          lastToolError: getLastToolError?.() ?? null,
-          usage: attemptUsage ?? null,
-        });
+        // Stable, diff-friendly JSON.
+        turnBundleJson = JSON.stringify(
+          {
+            ts: new Date().toISOString(),
+            sessionKey: params.sessionKey ?? null,
+            sessionId: params.sessionId,
+            sessionIdUsed,
+            provider: params.provider,
+            model: params.modelId,
+            systemPromptRef: "system-prompt.txt",
+            // AgentMessage[] as recorded at end-of-turn.
+            messages: messagesSnapshot,
+            toolMetas: toolMetasNormalized,
+            lastToolError: getLastToolError?.() ?? null,
+            usage: attemptUsage ?? null,
+          },
+          null,
+          2,
+        );
       } catch {
         // Best-effort: never fail the attempt due to serialization.
         turnBundleJson = undefined;
@@ -1540,6 +1578,7 @@ export async function runEmbeddedAttempt(
         promptError,
         sessionIdUsed,
         systemPromptReport,
+        systemPromptBaseText: systemPromptBaseText ?? undefined,
         systemPromptText: systemPromptText ?? undefined,
         turnBundleJson,
         messagesSnapshot,

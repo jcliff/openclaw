@@ -1,5 +1,29 @@
 import type { OpenClawConfig } from "../config/config.js";
 
+// This is the *stable* summary contract we emit for downstream consumers (Drumbeat,
+// diagnostics extensions). Keep it intentionally small and version-tolerant.
+export type DiagnosticSystemPromptReport = {
+  systemPrompt: {
+    chars: number;
+    projectContextChars: number;
+    nonProjectContextChars: number;
+  };
+  injectedWorkspaceFiles: Array<{
+    name: string;
+    injectedChars: number;
+    truncated: boolean;
+  }>;
+  skills: {
+    promptChars: number;
+    // Optional: we don't currently need full entries downstream.
+    entries?: Array<{ name: string; blockChars: number }>;
+  };
+  tools: {
+    listChars: number;
+    schemaChars: number;
+  };
+};
+
 export type DiagnosticSessionState = "idle" | "processing" | "waiting";
 
 type DiagnosticBaseEvent = {
@@ -33,18 +57,12 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
     limit?: number;
     used?: number;
   };
-  systemPromptReport?: {
-    systemPrompt: { chars: number; projectContextChars: number; nonProjectContextChars: number };
-    injectedWorkspaceFiles: Array<{
-      name: string;
-      injectedChars: number;
-      truncated: boolean;
-    }>;
-    skills: { promptChars: number; entries: Array<{ name: string; blockChars: number }> };
-    tools: { listChars: number; schemaChars: number };
-  };
+  /** Structured prompt composition report (stable subset contract). */
+  systemPromptReport?: DiagnosticSystemPromptReport;
   /** Full system prompt text used for the turn (unmodified). */
   systemPromptText?: string;
+  /** Base (pre-injection) system prompt template for diffing. */
+  systemPromptBaseText?: string;
   /** JSON-serialized per-turn bundle for replay (messages, tool metadata, etc.). */
   turnBundleJson?: string;
   costUsd?: number;

@@ -600,6 +600,7 @@ export async function runReplyAgent(params: {
             }
           : undefined,
         systemPromptText: runResult.meta?.systemPromptText,
+        systemPromptBaseText: runResult.meta?.systemPromptBaseText,
         turnBundleJson: runResult.meta?.turnBundleJson,
       });
     }

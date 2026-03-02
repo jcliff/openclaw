@@ -21,6 +21,8 @@ import type { DiagnosticEventPayload, OpenClawPluginServiceContext } from "openc
 
 type DiagnosticUsageEvent = Extract<DiagnosticEventPayload, { type: "model.usage" }> & {
   turnBundleJson?: string;
+  systemPromptBaseText?: string;
+  systemPromptReport?: unknown;
 };
 
 export type ContextSnapshotConfig = {
@@ -100,14 +102,47 @@ export async function sendContextSnapshot(
     }
   }
 
-  if (typeof (evt as any).turnBundleJson === "string" && (evt as any).turnBundleJson.length > 0) {
+  if (typeof evt.systemPromptBaseText === "string" && evt.systemPromptBaseText.length > 0) {
+    if (totalBytes < maxTotalBytes) {
+      const remaining = maxTotalBytes - totalBytes;
+      const raw = evt.systemPromptBaseText;
+      const rawBytes = Buffer.byteLength(raw, "utf8");
+      const content =
+        rawBytes > remaining
+          ? raw.slice(0, remaining) + `\n[truncated: ${rawBytes} bytes total]`
+          : raw;
+      files["system-prompt.base.txt"] = content;
+      totalBytes += Buffer.byteLength(content, "utf8");
+    }
+  }
+
+  // Only attach the report JSON if we're already attaching at least one other file.
+  // This keeps "missing/unreadable workspace" snapshots from emitting a noisy report-only payload.
+  if (evt.systemPromptReport && Object.keys(files).length > 0) {
+    if (totalBytes < maxTotalBytes) {
+      const remaining = maxTotalBytes - totalBytes;
+      const raw = JSON.stringify(evt.systemPromptReport, null, 2);
+      const rawBytes = Buffer.byteLength(raw, "utf8");
+      const content =
+        rawBytes > remaining
+          ? raw.slice(0, remaining) + `\n[truncated: ${rawBytes} bytes total]`
+          : raw;
+      files["system-prompt.report.json"] = content;
+      totalBytes += Buffer.byteLength(content, "utf8");
+    }
+  }
+
+  if (typeof evt.turnBundleJson === "string" && evt.turnBundleJson.length > 0) {
     // Always include the per-turn bundle when present; it is the v0 replay primitive.
     // Bypass maxFileBytes (64 KiB) and instead respect remaining total budget.
     if (totalBytes < maxTotalBytes) {
       const remaining = maxTotalBytes - totalBytes;
-      const raw = (evt as any).turnBundleJson as string;
+      const raw = evt.turnBundleJson;
       const rawBytes = Buffer.byteLength(raw, "utf8");
-      const content = rawBytes > remaining ? raw.slice(0, remaining) + `\n[truncated: ${rawBytes} bytes total]` : raw;
+      const content =
+        rawBytes > remaining
+          ? raw.slice(0, remaining) + `\n[truncated: ${rawBytes} bytes total]`
+          : raw;
       files["turn-bundle.json"] = content;
       totalBytes += Buffer.byteLength(content, "utf8");
     }
@@ -164,8 +199,6 @@ export async function sendContextSnapshot(
       causeInfo = ` cause=${ccode ? `${ccode}:` : ""}${cmsg}`;
     }
 
-    ctx.logger.warn(
-      `diagnostics-otel: context snapshot error: ${msg} url=${url}${causeInfo}`,
-    );
+    ctx.logger.warn(`diagnostics-otel: context snapshot error: ${msg} url=${url}${causeInfo}`);
   }
 }

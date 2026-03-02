@@ -35,6 +35,9 @@ export type EmbeddedPiRunMeta = {
   agentMeta?: EmbeddedPiAgentMeta;
   aborted?: boolean;
   systemPromptReport?: SessionSystemPromptReport;
+  /** Base (pre-injection) system prompt template for diffing. */
+  systemPromptBaseText?: string;
+  /** Full assembled system prompt text used for the turn (unmodified). */
   systemPromptText?: string;
   /** JSON-serialized per-turn bundle for replay (messages, tool metadata, etc.). */
   turnBundleJson?: string;
