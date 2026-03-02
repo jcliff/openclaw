@@ -10,7 +10,12 @@ import {
 import { resolveHeartbeatPrompt } from "../../../auto-reply/heartbeat.js";
 import { resolveChannelCapabilities } from "../../../config/channel-capabilities.js";
 import type { OpenClawConfig } from "../../../config/config.js";
+import {
+  parseContextSnapshotBoolean,
+  sendContextSnapshotDetached,
+} from "../../../infra/context-snapshot-client.js";
 import { getMachineDisplayName } from "../../../infra/machine-name.js";
+import { generateSecureToken, generateSecureUuid } from "../../../infra/secure-random.js";
 import { MAX_IMAGE_BYTES } from "../../../media/constants.js";
 import { getGlobalHookRunner } from "../../../plugins/hook-runner-global.js";
 import type {
@@ -424,12 +429,104 @@ function summarizeSessionContext(messages: AgentMessage[]): {
   };
 }
 
+export function buildRequestSnapshotFiles(params: {
+  turnId: string;
+  provider: string;
+  model: string;
+  prompt: string;
+  messages: AgentMessage[];
+}): Record<string, string> {
+  return {
+    "files/turn-bundle.json": JSON.stringify(
+      {
+        turn_id: params.turnId,
+        phase: "request",
+        provider: params.provider,
+        model: params.model,
+        prompt: params.prompt,
+        messages: params.messages,
+        stop_reason: null,
+        usage: null,
+        error: null,
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+export function buildResponseSnapshotFiles(params: {
+  turnId: string;
+  provider: string;
+  model: string;
+  prompt: string;
+  messages: AgentMessage[];
+  stopReason: string | null;
+  usage: unknown;
+  error: string | null;
+  response: AgentMessage | null;
+  assistantTexts: string[];
+  providerResponseRaw: unknown;
+}): Record<string, string> {
+  return {
+    "files/assistant-response.json": JSON.stringify(
+      {
+        turn_id: params.turnId,
+        phase: "response",
+        provider: params.provider,
+        model: params.model,
+        prompt: params.prompt,
+        messages: params.messages,
+        stop_reason: params.stopReason,
+        usage: params.usage,
+        error: params.error,
+        response: params.response,
+        assistant_texts: params.assistantTexts,
+        provider_response_raw: params.providerResponseRaw,
+      },
+      null,
+      2,
+    ),
+  };
+}
+
+export function buildResponseTurnBundlePatch(params: {
+  turnId: string;
+  provider: string;
+  model: string;
+  prompt: string;
+  messages: AgentMessage[];
+  stopReason: string | null;
+  usage: unknown;
+  error: string | null;
+}): Record<string, string> {
+  return {
+    "files/turn-bundle.json": JSON.stringify(
+      {
+        turn_id: params.turnId,
+        phase: "response",
+        provider: params.provider,
+        model: params.model,
+        prompt: params.prompt,
+        messages: params.messages,
+        stop_reason: params.stopReason,
+        usage: params.usage,
+        error: params.error,
+      },
+      null,
+      2,
+    ),
+  };
+}
+
 export async function runEmbeddedAttempt(
   params: EmbeddedRunAttemptParams,
 ): Promise<EmbeddedRunAttemptResult> {
   const resolvedWorkspace = resolveUserPath(params.workspaceDir);
   const prevCwd = process.cwd();
   const runAbortController = new AbortController();
+  const snapshotsEnabled = parseContextSnapshotBoolean(process.env.OPENCLAW_CONTEXT_SNAPSHOTS);
+  const snapshotSessionKey = (params.sessionKey ?? params.sessionId).trim();
 
   log.debug(
     `embedded run start: runId=${params.runId} sessionId=${params.sessionId} provider=${params.provider} model=${params.modelId} thinking=${params.thinkLevel} messageChannel=${params.messageChannel ?? params.messageProvider ?? "unknown"}`,
@@ -701,39 +798,6 @@ export async function runEmbeddedAttempt(
       skillsPrompt,
       tools,
     });
-    // Capture a base prompt (pre-injection) for diffing. This intentionally excludes
-    // injected workspace files + skills prompt, while keeping runtime/tooling sections.
-    const systemPromptBaseText = buildEmbeddedSystemPrompt({
-      workspaceDir: effectiveWorkspace,
-      defaultThinkLevel: params.thinkLevel,
-      reasoningLevel: params.reasoningLevel ?? "off",
-      extraSystemPrompt: params.extraSystemPrompt,
-      ownerNumbers: params.ownerNumbers,
-      ownerDisplay: ownerDisplay.ownerDisplay,
-      ownerDisplaySecret: ownerDisplay.ownerDisplaySecret,
-      reasoningTagHint,
-      heartbeatPrompt: isDefaultAgent
-        ? resolveHeartbeatPrompt(params.config?.agents?.defaults?.heartbeat?.prompt)
-        : undefined,
-      skillsPrompt: undefined,
-      docsPath: docsPath ?? undefined,
-      ttsHint,
-      workspaceNotes,
-      reactionGuidance,
-      promptMode,
-      acpEnabled: params.config?.acp?.enabled !== false,
-      runtimeInfo,
-      messageToolHints,
-      sandboxInfo,
-      tools,
-      modelAliasLines: buildModelAliasLines(params.config),
-      userTimezone,
-      userTime,
-      userTimeFormat,
-      contextFiles: [],
-      memoryCitationsMode: params.config?.memory?.citations,
-    });
-
     const systemPromptOverride = createSystemPromptOverride(appendPrompt);
     let systemPromptText = systemPromptOverride();
 
@@ -1213,12 +1277,15 @@ export async function runEmbeddedAttempt(
 
       let promptError: unknown = null;
       let promptErrorSource: "prompt" | "compaction" | null = null;
+      let effectivePrompt = params.prompt;
+      // turn_id correlates request/response snapshot commits for this turn
+      // must not use weak randomness (temp-path-guard)
+      const turnId = generateSecureUuid?.() ?? generateSecureToken(16);
       try {
         const promptStartedAt = Date.now();
 
         // Run before_prompt_build hooks to allow plugins to inject prompt context.
         // Legacy compatibility: before_agent_start is also checked for context fields.
-        let effectivePrompt = params.prompt;
         const hookCtx = {
           agentId: hookAgentId,
           sessionKey: params.sessionKey,
@@ -1345,6 +1412,21 @@ export async function runEmbeddedAttempt(
                 log.warn(`llm_input hook failed: ${String(err)}`);
               });
           }
+
+          // Request snapshot (pre-send): best-effort audit record.
+          // Note: turn_id is also stored in the bundle so the request commit is self-describing.
+          sendContextSnapshotDetached({
+            enabled: snapshotsEnabled && snapshotSessionKey.length > 0,
+            sessionKey: snapshotSessionKey,
+            systemPromptText: systemPromptText ?? undefined,
+            files: buildRequestSnapshotFiles({
+              turnId,
+              provider: params.provider,
+              model: params.modelId,
+              prompt: effectivePrompt,
+              messages: activeSession.messages,
+            }),
+          });
 
           // Only pass images option if there are actually images to pass
           // This avoids potential issues with models that don't expect the images parameter
@@ -1541,35 +1623,45 @@ export async function runEmbeddedAttempt(
           });
       }
 
-      const attemptUsage = getUsageTotals();
+      const lastAssistantStopReasonRaw =
+        (lastAssistant as unknown as { stopReason?: unknown; stop_reason?: unknown } | undefined)
+          ?.stopReason ??
+        (lastAssistant as unknown as { stopReason?: unknown; stop_reason?: unknown } | undefined)
+          ?.stop_reason;
 
-      let turnBundleJson: string | undefined;
-      try {
-        // v0: store the full per-turn bundle for byte-for-byte replay.
-        // Keep as a single JSON blob to avoid schema churn.
-        // Stable, diff-friendly JSON.
-        turnBundleJson = JSON.stringify(
-          {
-            ts: new Date().toISOString(),
-            sessionKey: params.sessionKey ?? null,
-            sessionId: params.sessionId,
-            sessionIdUsed,
+      const lastAssistantStopReason =
+        typeof lastAssistantStopReasonRaw === "string" ? lastAssistantStopReasonRaw : null;
+
+      // Response snapshot (post-receive): capture assistant response (or error) for this turn.
+      sendContextSnapshotDetached({
+        enabled: snapshotsEnabled && snapshotSessionKey.length > 0,
+        sessionKey: snapshotSessionKey,
+        files: {
+          ...buildResponseTurnBundlePatch({
+            turnId,
             provider: params.provider,
             model: params.modelId,
-            systemPromptRef: "system-prompt.txt",
-            // AgentMessage[] as recorded at end-of-turn.
+            prompt: effectivePrompt,
             messages: messagesSnapshot,
-            toolMetas: toolMetasNormalized,
-            lastToolError: getLastToolError?.() ?? null,
-            usage: attemptUsage ?? null,
-          },
-          null,
-          2,
-        );
-      } catch {
-        // Best-effort: never fail the attempt due to serialization.
-        turnBundleJson = undefined;
-      }
+            stopReason: lastAssistantStopReason,
+            usage: getUsageTotals(),
+            error: promptError ? describeUnknownError(promptError) : null,
+          }),
+          ...buildResponseSnapshotFiles({
+            turnId,
+            provider: params.provider,
+            model: params.modelId,
+            prompt: effectivePrompt,
+            messages: messagesSnapshot,
+            stopReason: lastAssistantStopReason,
+            usage: getUsageTotals(),
+            error: promptError ? describeUnknownError(promptError) : null,
+            response: lastAssistant ?? null,
+            assistantTexts: assistantTexts,
+            providerResponseRaw: null,
+          }),
+        },
+      });
 
       return {
         aborted,
@@ -1578,9 +1670,7 @@ export async function runEmbeddedAttempt(
         promptError,
         sessionIdUsed,
         systemPromptReport,
-        systemPromptBaseText: systemPromptBaseText ?? undefined,
         systemPromptText: systemPromptText ?? undefined,
-        turnBundleJson,
         messagesSnapshot,
         assistantTexts,
         toolMetas: toolMetasNormalized,
@@ -1594,7 +1684,7 @@ export async function runEmbeddedAttempt(
         cloudCodeAssistFormatError: Boolean(
           lastAssistant?.errorMessage && isCloudCodeAssistFormatError(lastAssistant.errorMessage),
         ),
-        attemptUsage,
+        attemptUsage: getUsageTotals(),
         compactionCount: getCompactionCount(),
         // Client tool call detected (OpenResponses hosted tools)
         clientToolCall: clientToolCallDetected ?? undefined,
