@@ -33,6 +33,7 @@ const state = vi.hoisted(() => ({
 
 let modelFallbackModule: typeof import("../../agents/model-fallback.js");
 let onAgentEvent: typeof import("../../infra/agent-events.js").onAgentEvent;
+let emitDiagnosticEvent: typeof import("../../infra/diagnostic-events.js").emitDiagnosticEvent;
 
 let runReplyAgentPromise:
   | Promise<(typeof import("./agent-runner.js"))["runReplyAgent"]>
@@ -76,10 +77,21 @@ vi.mock("./queue.js", () => ({
   scheduleFollowupDrain: vi.fn(),
 }));
 
+vi.mock("../../infra/diagnostic-events.js", async () => {
+  const actual = await vi.importActual<typeof import("../../infra/diagnostic-events.js")>(
+    "../../infra/diagnostic-events.js",
+  );
+  return {
+    ...actual,
+    emitDiagnosticEvent: vi.fn(),
+  };
+});
+
 beforeAll(async () => {
   // Avoid attributing the initial agent-runner import cost to the first test case.
   modelFallbackModule = await import("../../agents/model-fallback.js");
   ({ onAgentEvent } = await import("../../infra/agent-events.js"));
+  ({ emitDiagnosticEvent } = await import("../../infra/diagnostic-events.js"));
   await getRunReplyAgent();
 });
 
@@ -87,6 +99,7 @@ beforeEach(() => {
   state.runEmbeddedPiAgentMock.mockClear();
   state.runCliAgentMock.mockClear();
   vi.mocked(enqueueFollowupRun).mockClear();
+  vi.mocked(emitDiagnosticEvent).mockClear();
   vi.stubEnv("OPENCLAW_TEST_FAST", "1");
 });
 
@@ -1665,5 +1678,40 @@ describe("runReplyAgent memory flush", () => {
       expect(stored[sessionKey].compactionCount).toBe(2);
       expect(stored[sessionKey].memoryFlushCompactionCount).toBe(2);
     });
+  });
+});
+
+describe("runReplyAgent diagnostics turnId", () => {
+  it("emits model.usage with turnId when provided by agentMeta", async () => {
+    state.runEmbeddedPiAgentMock.mockImplementationOnce(async () => {
+      return {
+        payloads: [{ text: "final" }],
+        meta: {
+          agentMeta: {
+            sessionId: "s1",
+            provider: "openai",
+            model: "gpt-test",
+            turnId: "turn-123",
+            usage: { total: 1 },
+          },
+        },
+      };
+    });
+
+    const { run } = createMinimalRun({
+      typingMode: "message",
+      sessionKey: "agent:main:discord:channel:1",
+      runOverrides: {
+        config: { diagnostics: { enabled: true } },
+      },
+    });
+    await run();
+
+    const calls = vi
+      .mocked(emitDiagnosticEvent)
+      .mock.calls.map((c) => c[0] as unknown as { type?: string; turnId?: string });
+    const usageEvt = calls.find((evt) => evt.type === "model.usage");
+    expect(usageEvt).toBeTruthy();
+    expect(usageEvt?.turnId).toBe("turn-123");
   });
 });

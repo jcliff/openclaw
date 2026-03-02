@@ -5,6 +5,8 @@ export type EmbeddedPiAgentMeta = {
   sessionId: string;
   provider: string;
   model: string;
+  /** Stable id for correlating OTLP usage ↔ context snapshots for a specific agent turn. */
+  turnId?: string;
   compactionCount?: number;
   promptTokens?: number;
   usage?: {

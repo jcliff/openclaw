@@ -31,6 +31,7 @@ describe("DiagnosticUsageEvent systemPromptReport contract", () => {
       ts: Date.now(),
       seq: 1,
       sessionKey: "discord:channel:123",
+      turnId: "turn-123",
       usage: {},
       systemPromptText: "full prompt",
       systemPromptBaseText: "base prompt",

@@ -1667,6 +1667,7 @@ export async function runEmbeddedAttempt(
         aborted,
         timedOut,
         timedOutDuringCompaction,
+        turnId,
         promptError,
         sessionIdUsed,
         systemPromptReport,

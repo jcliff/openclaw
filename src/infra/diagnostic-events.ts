@@ -35,6 +35,8 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
   type: "model.usage";
   sessionKey?: string;
   sessionId?: string;
+  /** Stable id for correlating this usage event with context snapshots. */
+  turnId?: string;
   channel?: string;
   provider?: string;
   model?: string;

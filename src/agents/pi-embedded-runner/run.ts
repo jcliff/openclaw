@@ -843,6 +843,7 @@ export async function runEmbeddedPiAgent(
                   sessionId: sessionIdUsed,
                   provider,
                   model: model.id,
+                  turnId: attempt.turnId,
                 },
                 systemPromptReport: attempt.systemPromptReport,
                 systemPromptBaseText: attempt.systemPromptBaseText,
@@ -872,6 +873,7 @@ export async function runEmbeddedPiAgent(
                     sessionId: sessionIdUsed,
                     provider,
                     model: model.id,
+                    turnId: attempt.turnId,
                   },
                   systemPromptReport: attempt.systemPromptReport,
                   systemPromptBaseText: attempt.systemPromptBaseText,
@@ -903,6 +905,7 @@ export async function runEmbeddedPiAgent(
                     sessionId: sessionIdUsed,
                     provider,
                     model: model.id,
+                    turnId: attempt.turnId,
                   },
                   systemPromptReport: attempt.systemPromptReport,
                   systemPromptBaseText: attempt.systemPromptBaseText,
@@ -1071,6 +1074,7 @@ export async function runEmbeddedPiAgent(
           const promptTokens = derivePromptTokens(lastRunPromptUsage);
           const agentMeta: EmbeddedPiAgentMeta = {
             sessionId: sessionIdUsed,
+            turnId: attempt.turnId,
             provider: lastAssistant?.provider ?? provider,
             model: lastAssistant?.model ?? model.id,
             usage,
