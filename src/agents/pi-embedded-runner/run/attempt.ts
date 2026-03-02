@@ -437,7 +437,7 @@ export function buildRequestSnapshotFiles(params: {
   messages: AgentMessage[];
 }): Record<string, string> {
   return {
-    "files/turn-bundle.json": JSON.stringify(
+    "turn-bundle.json": JSON.stringify(
       {
         turn_id: params.turnId,
         phase: "request",
@@ -469,7 +469,7 @@ export function buildResponseSnapshotFiles(params: {
   providerResponseRaw: unknown;
 }): Record<string, string> {
   return {
-    "files/assistant-response.json": JSON.stringify(
+    "assistant-response.json": JSON.stringify(
       {
         turn_id: params.turnId,
         phase: "response",
@@ -501,7 +501,7 @@ export function buildResponseTurnBundlePatch(params: {
   error: string | null;
 }): Record<string, string> {
   return {
-    "files/turn-bundle.json": JSON.stringify(
+    "turn-bundle.json": JSON.stringify(
       {
         turn_id: params.turnId,
         phase: "response",

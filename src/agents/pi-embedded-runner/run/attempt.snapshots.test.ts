@@ -6,7 +6,7 @@ import {
 } from "./attempt.js";
 
 describe("context snapshots (OC#4)", () => {
-  it("request snapshot emits files/turn-bundle.json (phase=request)", () => {
+  it("request snapshot emits turn-bundle.json (phase=request)", () => {
     const files = buildRequestSnapshotFiles({
       turnId: "turn-123",
       provider: "openai",
@@ -17,8 +17,8 @@ describe("context snapshots (OC#4)", () => {
       ] as unknown as import("@mariozechner/pi-agent-core").AgentMessage[],
     });
 
-    expect(Object.keys(files)).toEqual(["files/turn-bundle.json"]);
-    const parsed = JSON.parse(files["files/turn-bundle.json"]);
+    expect(Object.keys(files)).toEqual(["turn-bundle.json"]);
+    const parsed = JSON.parse(files["turn-bundle.json"]);
     expect(parsed.turn_id).toBe("turn-123");
     expect(parsed.phase).toBe("request");
     expect(parsed.provider).toBe("openai");
@@ -30,7 +30,7 @@ describe("context snapshots (OC#4)", () => {
     expect(parsed.error).toBeNull();
   });
 
-  it("response snapshot emits files/assistant-response.json (phase=response)", () => {
+  it("response snapshot emits assistant-response.json (phase=response)", () => {
     const files = buildResponseSnapshotFiles({
       turnId: "turn-123",
       provider: "anthropic",
@@ -50,8 +50,8 @@ describe("context snapshots (OC#4)", () => {
       providerResponseRaw: null,
     });
 
-    expect(Object.keys(files)).toEqual(["files/assistant-response.json"]);
-    const parsed = JSON.parse(files["files/assistant-response.json"]);
+    expect(Object.keys(files)).toEqual(["assistant-response.json"]);
+    const parsed = JSON.parse(files["assistant-response.json"]);
     expect(parsed.turn_id).toBe("turn-123");
     expect(parsed.phase).toBe("response");
     expect(parsed.stop_reason).toBe("end_turn");
@@ -73,8 +73,8 @@ describe("context snapshots (OC#4)", () => {
       error: null,
     });
 
-    expect(Object.keys(patch)).toEqual(["files/turn-bundle.json"]);
-    const parsed = JSON.parse(patch["files/turn-bundle.json"]);
+    expect(Object.keys(patch)).toEqual(["turn-bundle.json"]);
+    const parsed = JSON.parse(patch["turn-bundle.json"]);
     expect(parsed.turn_id).toBe("turn-999");
     expect(parsed.phase).toBe("response");
     expect(parsed.provider).toBe("openai");
@@ -103,7 +103,7 @@ describe("context snapshots (OC#4)", () => {
       providerResponseRaw: null,
     });
 
-    const parsed = JSON.parse(files["files/assistant-response.json"]);
+    const parsed = JSON.parse(files["assistant-response.json"]);
     expect(parsed.turn_id).toBe("turn-err");
     expect(parsed.error).toBe("rate limit");
   });
