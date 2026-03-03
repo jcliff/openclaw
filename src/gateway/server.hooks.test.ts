@@ -197,7 +197,22 @@ describe("gateway server hooks", () => {
   test("rejects request sessionKey unless hooks.allowRequestSessionKey is enabled", async () => {
     testState.hooksConfig = { enabled: true, token: "hook-secret" };
     await withGatewayServer(async ({ port }) => {
-      const denied = await fetch(`http://127.0.0.1:${port}/hooks/agent`, {
+      const deniedWake = await fetch(`http://127.0.0.1:${port}/hooks/wake`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer hook-secret",
+        },
+        body: JSON.stringify({
+          text: "Ping",
+          sessionKey: "hook:test",
+        }),
+      });
+      expect(deniedWake.status).toBe(400);
+      const deniedWakeBody = (await deniedWake.json()) as { error?: string };
+      expect(deniedWakeBody.error).toContain("hooks.allowRequestSessionKey");
+
+      const deniedAgent = await fetch(`http://127.0.0.1:${port}/hooks/agent`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -208,9 +223,57 @@ describe("gateway server hooks", () => {
           sessionKey: "agent:main:dm:u99999",
         }),
       });
-      expect(denied.status).toBe(400);
-      const deniedBody = (await denied.json()) as { error?: string };
-      expect(deniedBody.error).toContain("hooks.allowRequestSessionKey");
+      expect(deniedAgent.status).toBe(400);
+      const deniedAgentBody = (await deniedAgent.json()) as { error?: string };
+      expect(deniedAgentBody.error).toContain("hooks.allowRequestSessionKey");
+    });
+  });
+
+  test("routes /hooks/wake to requested sessionKey when policy allows", async () => {
+    testState.hooksConfig = {
+      enabled: true,
+      token: "hook-secret",
+      allowRequestSessionKey: true,
+      allowedSessionKeyPrefixes: ["hook:"],
+    };
+    await withGatewayServer(async ({ port }) => {
+      const resWake = await fetch(`http://127.0.0.1:${port}/hooks/wake`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer hook-secret",
+        },
+        body: JSON.stringify({
+          text: "Session-routed wake",
+          sessionKey: "hook:test",
+        }),
+      });
+      expect(resWake.status).toBe(200);
+
+      // Ensure the wake went to the requested hook session key, not main.
+      expect(peekSystemEvents("hook:test").some((e) => e.includes("Session-routed wake"))).toBe(
+        true,
+      );
+      expect(peekSystemEvents(resolveMainKey()).length).toBe(0);
+      drainSystemEvents("hook:test");
+
+      // Jordan requested: direct contract tests for invalid typed sessionKey.
+      const invalidSessionKeys: unknown[] = [123, { a: 1 }, "   "];
+      for (const sessionKey of invalidSessionKeys) {
+        const resBadKey = await fetch(`http://127.0.0.1:${port}/hooks/wake`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer hook-secret",
+          },
+          body: JSON.stringify({
+            text: "Bad key",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sessionKey: sessionKey as any,
+          }),
+        });
+        expect(resBadKey.status).toBe(400);
+      }
     });
   });
 
