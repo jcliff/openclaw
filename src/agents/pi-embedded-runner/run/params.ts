@@ -22,6 +22,7 @@ export type ClientToolDefinition = {
 export type RunEmbeddedPiAgentParams = {
   sessionId: string;
   sessionKey?: string;
+  wakeEventId?: string;
   agentId?: string;
   messageChannel?: string;
   messageProvider?: string;

@@ -19,6 +19,7 @@ export async function prependSystemEvents(params: {
   isMainSession: boolean;
   isNewSession: boolean;
   prefixedBodyBase: string;
+  wakeEventRef?: { wakeEventId?: string };
 }): Promise<string> {
   const compactSystemEvent = (line: string): string | null => {
     const trimmed = line.trim();
@@ -86,6 +87,12 @@ export async function prependSystemEvents(params: {
 
   const systemLines: string[] = [];
   const queued = drainSystemEventEntries(params.sessionKey);
+  if (params.wakeEventRef) {
+    params.wakeEventRef.wakeEventId = queued
+      .toReversed()
+      .map((event) => event.wakeEventId?.trim())
+      .find((value): value is string => Boolean(value));
+  }
   systemLines.push(
     ...queued
       .map((event) => {

@@ -329,12 +329,14 @@ export async function runPreparedReply(
   });
   const isGroupSession = sessionEntry?.chatType === "group" || sessionEntry?.chatType === "channel";
   const isMainSession = !isGroupSession && sessionKey === normalizeMainKey(sessionCfg?.mainKey);
+  const wakeEventRef: { wakeEventId?: string } = {};
   prefixedBodyBase = await prependSystemEvents({
     cfg,
     sessionKey,
     isMainSession,
     isNewSession,
     prefixedBodyBase,
+    wakeEventRef,
   });
   prefixedBodyBase = appendUntrustedContext(prefixedBodyBase, sessionCtx.UntrustedContext);
   const threadStarterBody = ctx.ThreadStarterBody?.trim();
@@ -470,6 +472,7 @@ export async function runPreparedReply(
       agentDir,
       sessionId: sessionIdFinal,
       sessionKey,
+      wakeEventId: wakeEventRef.wakeEventId,
       messageProvider: resolveOriginMessageProvider({
         originatingChannel: ctx.OriginatingChannel ?? sessionCtx.OriginatingChannel,
         provider: ctx.Surface ?? ctx.Provider ?? sessionCtx.Provider,

@@ -206,17 +206,43 @@ export function normalizeHookHeaders(req: IncomingMessage) {
   return headers;
 }
 
-export function normalizeWakePayload(
-  payload: Record<string, unknown>,
-):
-  | { ok: true; value: { text: string; mode: "now" | "next-heartbeat" } }
+const WAKE_EVENT_ID_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const WAKE_EVENT_ID_ULID_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+function normalizeWakeEventId(raw: unknown): string | null | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  if (typeof raw !== "string") {
+    return null;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (WAKE_EVENT_ID_UUID_RE.test(trimmed) || WAKE_EVENT_ID_ULID_RE.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
+export function normalizeWakePayload(payload: Record<string, unknown>):
+  | {
+      ok: true;
+      value: { text: string; mode: "now" | "next-heartbeat"; wakeEventId?: string };
+    }
   | { ok: false; error: string } {
   const text = typeof payload.text === "string" ? payload.text.trim() : "";
   if (!text) {
     return { ok: false, error: "text required" };
   }
+  const wakeEventId = normalizeWakeEventId(payload.wakeEventId);
+  if (wakeEventId === null) {
+    return { ok: false, error: "wakeEventId must be a ULID or UUID string" };
+  }
   const mode = payload.mode === "next-heartbeat" ? "next-heartbeat" : "now";
-  return { ok: true, value: { text, mode } };
+  return { ok: true, value: { text, mode, ...(wakeEventId ? { wakeEventId } : {}) } };
 }
 
 export type HookAgentPayload = {

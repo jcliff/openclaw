@@ -2,7 +2,12 @@
 // prefixed to the next prompt. We intentionally avoid persistence to keep
 // events ephemeral. Events are session-scoped and require an explicit key.
 
-export type SystemEvent = { text: string; ts: number; contextKey?: string | null };
+export type SystemEvent = {
+  text: string;
+  ts: number;
+  contextKey?: string | null;
+  wakeEventId?: string;
+};
 
 const MAX_EVENTS = 20;
 
@@ -17,6 +22,7 @@ const queues = new Map<string, SessionQueue>();
 type SystemEventOptions = {
   sessionKey: string;
   contextKey?: string | null;
+  wakeEventId?: string;
 };
 
 function requireSessionKey(key?: string | null): string {
@@ -75,6 +81,7 @@ export function enqueueSystemEvent(text: string, options: SystemEventOptions) {
     text: cleaned,
     ts: Date.now(),
     contextKey: normalizedContextKey,
+    wakeEventId: typeof options?.wakeEventId === "string" ? options.wakeEventId.trim() : undefined,
   });
   if (entry.queue.length > MAX_EVENTS) {
     entry.queue.shift();

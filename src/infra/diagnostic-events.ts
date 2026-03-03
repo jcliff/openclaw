@@ -37,6 +37,8 @@ export type DiagnosticUsageEvent = DiagnosticBaseEvent & {
   sessionId?: string;
   /** Stable id for correlating this usage event with context snapshots. */
   turnId?: string;
+  /** Wake hook event id (ULID/UUID) for cross-system correlation. */
+  wakeEventId?: string;
   channel?: string;
   provider?: string;
   model?: string;

@@ -575,6 +575,7 @@ export async function runEmbeddedPiAgent(
           const attempt = await runEmbeddedAttempt({
             sessionId: params.sessionId,
             sessionKey: params.sessionKey,
+            wakeEventId: params.wakeEventId,
             messageChannel: params.messageChannel,
             messageProvider: params.messageProvider,
             agentAccountId: params.agentAccountId,
@@ -1075,6 +1076,7 @@ export async function runEmbeddedPiAgent(
           const agentMeta: EmbeddedPiAgentMeta = {
             sessionId: sessionIdUsed,
             turnId: attempt.turnId,
+            wakeEventId: attempt.wakeEventId,
             provider: lastAssistant?.provider ?? provider,
             model: lastAssistant?.model ?? model.id,
             usage,

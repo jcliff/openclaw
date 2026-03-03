@@ -74,6 +74,7 @@ type HookDispatchers = {
     text: string;
     mode: "now" | "next-heartbeat";
     sessionKey?: string;
+    wakeEventId?: string;
   }) => void;
   dispatchAgentHook: (value: HookAgentDispatchPayload) => string;
 };

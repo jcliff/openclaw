@@ -499,6 +499,9 @@ export function createDiagnosticsOtelService(): OpenClawPluginService {
           }
         }
 
+        if (evt.wakeEventId) {
+          spanAttrs["openclaw.wake_event_id"] = evt.wakeEventId;
+        }
         const span = spanWithDuration("openclaw.model.usage", spanAttrs, evt.durationMs);
         span.end();
       };

@@ -87,11 +87,21 @@ describe("gateway hooks helpers", () => {
   });
 
   test("normalizeWakePayload trims + validates", () => {
-    expect(normalizeWakePayload({ text: "  hi " })).toEqual({
+    expect(
+      normalizeWakePayload({
+        text: "  hi ",
+        wakeEventId: "01JWH1J0Y9K8KXJ7SKYTDK6V6W",
+      }),
+    ).toEqual({
       ok: true,
-      value: { text: "hi", mode: "now" },
+      value: {
+        text: "hi",
+        mode: "now",
+        wakeEventId: "01JWH1J0Y9K8KXJ7SKYTDK6V6W",
+      },
     });
     expect(normalizeWakePayload({ text: "  ", mode: "now" }).ok).toBe(false);
+    expect(normalizeWakePayload({ text: "wake", wakeEventId: "not-an-id" }).ok).toBe(false);
   });
 
   test("normalizeAgentPayload defaults + validates channel", () => {

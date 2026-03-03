@@ -7,6 +7,8 @@ export type EmbeddedPiAgentMeta = {
   model: string;
   /** Stable id for correlating OTLP usage ↔ context snapshots for a specific agent turn. */
   turnId?: string;
+  /** Wake hook event id (ULID/UUID) for cross-system turn correlation. */
+  wakeEventId?: string;
   compactionCount?: number;
   promptTokens?: number;
   usage?: {

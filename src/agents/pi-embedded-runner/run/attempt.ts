@@ -475,6 +475,7 @@ function annotateMessagesForSnapshots(messages: AgentMessage[]): AgentMessage[] 
 
 export function buildRequestSnapshotFiles(params: {
   turnId: string;
+  wakeEventId?: string;
   provider: string;
   model: string;
   prompt: string;
@@ -484,6 +485,7 @@ export function buildRequestSnapshotFiles(params: {
     "turn-bundle.json": JSON.stringify(
       {
         turn_id: params.turnId,
+        wake_event_id: params.wakeEventId ?? null,
         phase: "request",
         provider: params.provider,
         model: params.model,
@@ -501,6 +503,7 @@ export function buildRequestSnapshotFiles(params: {
 
 export function buildResponseSnapshotFiles(params: {
   turnId: string;
+  wakeEventId?: string;
   provider: string;
   model: string;
   prompt: string;
@@ -516,6 +519,7 @@ export function buildResponseSnapshotFiles(params: {
     "assistant-response.json": JSON.stringify(
       {
         turn_id: params.turnId,
+        wake_event_id: params.wakeEventId ?? null,
         phase: "response",
         provider: params.provider,
         model: params.model,
@@ -536,6 +540,7 @@ export function buildResponseSnapshotFiles(params: {
 
 export function buildResponseTurnBundlePatch(params: {
   turnId: string;
+  wakeEventId?: string;
   provider: string;
   model: string;
   prompt: string;
@@ -548,6 +553,7 @@ export function buildResponseTurnBundlePatch(params: {
     "turn-bundle.json": JSON.stringify(
       {
         turn_id: params.turnId,
+        wake_event_id: params.wakeEventId ?? null,
         phase: "response",
         provider: params.provider,
         model: params.model,
@@ -1465,6 +1471,7 @@ export async function runEmbeddedAttempt(
             systemPromptText: systemPromptText ?? undefined,
             files: buildRequestSnapshotFiles({
               turnId,
+              wakeEventId: params.wakeEventId,
               provider: params.provider,
               model: params.modelId,
               prompt: effectivePrompt,
@@ -1683,6 +1690,7 @@ export async function runEmbeddedAttempt(
         files: {
           ...buildResponseTurnBundlePatch({
             turnId,
+            wakeEventId: params.wakeEventId,
             provider: params.provider,
             model: params.modelId,
             prompt: effectivePrompt,
@@ -1693,6 +1701,7 @@ export async function runEmbeddedAttempt(
           }),
           ...buildResponseSnapshotFiles({
             turnId,
+            wakeEventId: params.wakeEventId,
             provider: params.provider,
             model: params.modelId,
             prompt: effectivePrompt,
@@ -1709,6 +1718,7 @@ export async function runEmbeddedAttempt(
 
       return {
         turnId,
+        wakeEventId: params.wakeEventId,
         aborted,
         timedOut,
         timedOutDuringCompaction,

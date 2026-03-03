@@ -565,6 +565,7 @@ export async function runReplyAgent(params: {
         sessionKey,
         sessionId: followupRun.run.sessionId,
         turnId: runResult.meta?.agentMeta?.turnId,
+        wakeEventId: runResult.meta?.agentMeta?.wakeEventId,
         channel: replyToChannel,
         provider: providerUsed,
         model: modelUsed,

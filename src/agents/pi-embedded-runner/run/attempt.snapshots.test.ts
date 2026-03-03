@@ -20,6 +20,7 @@ describe("context snapshots (OC#4)", () => {
     expect(Object.keys(files)).toEqual(["turn-bundle.json"]);
     const parsed = JSON.parse(files["turn-bundle.json"]);
     expect(parsed.turn_id).toBe("turn-123");
+    expect(parsed.wake_event_id).toBeNull();
     expect(parsed.phase).toBe("request");
     expect(parsed.provider).toBe("openai");
     expect(parsed.model).toBe("gpt-test");
@@ -84,9 +85,10 @@ describe("context snapshots (OC#4)", () => {
     expect(parsed.error).toBeNull();
   });
 
-  it("response turn-bundle patch is minimal (response_summary only)", () => {
+  it("response turn-bundle patch carries wake_event_id when provided", () => {
     const patch = buildResponseTurnBundlePatch({
       turnId: "turn-999",
+      wakeEventId: "01JWH1J0Y9K8KXJ7SKYTDK6V6W",
       provider: "openai",
       model: "gpt-test",
       prompt: "hello",
@@ -101,6 +103,7 @@ describe("context snapshots (OC#4)", () => {
     expect(Object.keys(patch)).toEqual(["turn-bundle.json"]);
     const parsed = JSON.parse(patch["turn-bundle.json"]);
     expect(parsed.turn_id).toBe("turn-999");
+    expect(parsed.wake_event_id).toBe("01JWH1J0Y9K8KXJ7SKYTDK6V6W");
     expect(parsed.phase).toBe("response");
     expect(parsed.provider).toBe("openai");
     expect(parsed.model).toBe("gpt-test");

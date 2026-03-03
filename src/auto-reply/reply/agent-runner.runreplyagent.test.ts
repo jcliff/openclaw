@@ -1692,6 +1692,7 @@ describe("runReplyAgent diagnostics turnId", () => {
             provider: "openai",
             model: "gpt-test",
             turnId: "turn-123",
+            wakeEventId: "01JWH1J0Y9K8KXJ7SKYTDK6V6W",
             usage: { total: 1 },
           },
         },
@@ -1709,9 +1710,12 @@ describe("runReplyAgent diagnostics turnId", () => {
 
     const calls = vi
       .mocked(emitDiagnosticEvent)
-      .mock.calls.map((c) => c[0] as unknown as { type?: string; turnId?: string });
+      .mock.calls.map(
+        (c) => c[0] as unknown as { type?: string; turnId?: string; wakeEventId?: string },
+      );
     const usageEvt = calls.find((evt) => evt.type === "model.usage");
     expect(usageEvt).toBeTruthy();
     expect(usageEvt?.turnId).toBe("turn-123");
+    expect(usageEvt?.wakeEventId).toBe("01JWH1J0Y9K8KXJ7SKYTDK6V6W");
   });
 });

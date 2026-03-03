@@ -365,6 +365,26 @@ describe("diagnostics-otel service", () => {
     }
   });
 
+  test("includes wake_event_id on model.usage spans when provided", async () => {
+    const service = createDiagnosticsOtelService();
+    const ctx = createOtelContext(OTEL_TEST_ENDPOINT, { traces: true });
+    await service.start(ctx);
+
+    emitDiagnosticEvent({
+      type: "model.usage",
+      wakeEventId: "01JWH1J0Y9K8KXJ7SKYTDK6V6W",
+      usage: { total: 1 },
+    });
+
+    const call = telemetryState.tracer.startSpan.mock.calls.find(
+      (entry) => entry[0] === "openclaw.model.usage",
+    );
+    const options = call?.[1] as { attributes?: Record<string, unknown> } | undefined;
+    expect(options?.attributes?.["openclaw.wake_event_id"]).toBe("01JWH1J0Y9K8KXJ7SKYTDK6V6W");
+
+    await service.stop?.(ctx);
+  });
+
   test("redacts sensitive reason in session.state metric attributes", async () => {
     const service = createDiagnosticsOtelService();
     const ctx = createOtelContext(OTEL_TEST_ENDPOINT, { metrics: true });

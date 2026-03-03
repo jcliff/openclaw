@@ -26,6 +26,8 @@ export type EmbeddedRunAttemptParams = EmbeddedRunAttemptBase & {
 export type EmbeddedRunAttemptResult = {
   /** Stable turn id for correlating OTLP usage ↔ context snapshots. */
   turnId?: string;
+  /** Optional wake dispatch id that triggered this turn. */
+  wakeEventId?: string;
   aborted: boolean;
   timedOut: boolean;
   /** True if the timeout occurred while compaction was in progress or pending. */
