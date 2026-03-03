@@ -274,6 +274,32 @@ describe("diagnostics-otel service", () => {
     await service.stop?.(ctx);
   });
 
+  test("records model.usage turn_id span attribute when present", async () => {
+    const service = createDiagnosticsOtelService();
+    const ctx = createOtelContext(OTEL_TEST_ENDPOINT, { traces: true });
+    await service.start(ctx);
+
+    emitDiagnosticEvent({
+      type: "model.usage",
+      sessionKey: "sess",
+      sessionId: "sid",
+      turnId: "turn-123",
+      channel: "discord",
+      provider: "discord",
+      model: "m",
+      usage: { input: 1, output: 2 },
+    });
+
+    // We should have started a span with our attrs.
+    const calls = telemetryState.tracer.startSpan.mock.calls;
+    expect(calls.length).toBeGreaterThan(0);
+    const last = calls[calls.length - 1];
+    const opts = (last?.[1] ?? {}) as { attributes?: Record<string, unknown> };
+    expect(opts.attributes?.["openclaw.turn_id"]).toBe("turn-123");
+
+    await service.stop?.(ctx);
+  });
+
   test("appends signal path when endpoint contains non-signal /v1 segment", async () => {
     const service = createDiagnosticsOtelService();
     const ctx = createTraceOnlyContext("https://www.comet.com/opik/api/v1/private/otel");

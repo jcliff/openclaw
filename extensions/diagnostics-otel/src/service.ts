@@ -465,6 +465,7 @@ export function createDiagnosticsOtelService(): OpenClawPluginService {
           ...attrs,
           "openclaw.sessionKey": evt.sessionKey ?? "",
           "openclaw.sessionId": evt.sessionId ?? "",
+          "openclaw.turn_id": evt.turnId ?? "",
           "openclaw.tokens.input": usage.input ?? 0,
           "openclaw.tokens.output": usage.output ?? 0,
           "openclaw.tokens.cache_read": usage.cacheRead ?? 0,

@@ -27,6 +27,7 @@ export function makeAttemptResult(
   overrides: Partial<EmbeddedRunAttemptResult> = {},
 ): EmbeddedRunAttemptResult {
   return {
+    turnId: "turn-test",
     aborted: false,
     timedOut: false,
     timedOutDuringCompaction: false,

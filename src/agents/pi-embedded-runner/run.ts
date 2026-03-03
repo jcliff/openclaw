@@ -1105,6 +1105,7 @@ export async function runEmbeddedPiAgent(
           // callers do not lose the turn as an orphaned user message.
           if (timedOut && !timedOutDuringCompaction && payloads.length === 0) {
             return {
+              turnId: attempt.turnId,
               payloads: [
                 {
                   text:
@@ -1147,6 +1148,7 @@ export async function runEmbeddedPiAgent(
             });
           }
           return {
+            turnId: attempt.turnId,
             payloads: payloads.length ? payloads : undefined,
             meta: {
               durationMs: Date.now() - started,

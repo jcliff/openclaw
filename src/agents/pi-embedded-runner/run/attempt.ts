@@ -1708,10 +1708,10 @@ export async function runEmbeddedAttempt(
       });
 
       return {
+        turnId,
         aborted,
         timedOut,
         timedOutDuringCompaction,
-        turnId,
         promptError,
         sessionIdUsed,
         systemPromptReport,

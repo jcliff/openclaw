@@ -60,6 +60,7 @@ const buildAssistant = (overrides: Partial<AssistantMessage>): AssistantMessage 
 });
 
 const makeAttempt = (overrides: Partial<EmbeddedRunAttemptResult>): EmbeddedRunAttemptResult => ({
+  turnId: "turn-test",
   aborted: false,
   timedOut: false,
   timedOutDuringCompaction: false,
@@ -213,7 +214,7 @@ async function runAutoPinnedOpenAiTurn(params: {
   runId: string;
   authProfileId?: string;
 }) {
-  await runEmbeddedPiAgent({
+  return await runEmbeddedPiAgent({
     sessionId: "session:test",
     sessionKey: params.sessionKey,
     sessionFile: path.join(params.workspaceDir, "session.jsonl"),
@@ -260,8 +261,8 @@ async function runAutoPinnedRotationCase(params: {
   runEmbeddedAttemptMock.mockClear();
   return withAgentWorkspace(async ({ agentDir, workspaceDir }) => {
     await writeAuthStore(agentDir);
-    mockFailedThenSuccessfulAttempt(params.errorMessage);
-    await runAutoPinnedOpenAiTurn({
+    mockFailedThenSuccessfulAttempt(params.errorMessage); // first attempt fails, second succeeds
+    const result = await runAutoPinnedOpenAiTurn({
       agentDir,
       workspaceDir,
       sessionKey: params.sessionKey,
@@ -270,7 +271,7 @@ async function runAutoPinnedRotationCase(params: {
 
     expect(runEmbeddedAttemptMock).toHaveBeenCalledTimes(2);
     const usageStats = await readUsageStats(agentDir);
-    return { usageStats };
+    return { usageStats, result };
   });
 }
 
@@ -353,7 +354,7 @@ async function runTurnWithCooldownSeed(params: {
     });
     mockSingleSuccessfulAttempt();
 
-    await runEmbeddedPiAgent({
+    const result = await runEmbeddedPiAgent({
       sessionId: "session:test",
       sessionKey: params.sessionKey,
       sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -370,28 +371,31 @@ async function runTurnWithCooldownSeed(params: {
     });
 
     expect(runEmbeddedAttemptMock).toHaveBeenCalledTimes(1);
-    return { usageStats: await readUsageStats(agentDir), now };
+    const usageStats = await readUsageStats(agentDir);
+    return { usageStats, now };
   });
 }
 
 describe("runEmbeddedPiAgent auth profile rotation", () => {
   it("rotates for auto-pinned profiles across retryable stream failures", async () => {
-    const { usageStats } = await runAutoPinnedRotationCase({
+    const { usageStats, result } = await runAutoPinnedRotationCase({
       errorMessage: "rate limit",
       sessionKey: "agent:test:auto",
       runId: "run:auto",
     });
+    expect(result.turnId).toBe("turn-test");
     expect(typeof usageStats["openai:p2"]?.lastUsed).toBe("number");
   });
 
   it("rotates on timeout without cooling down the timed-out profile", async () => {
-    const { usageStats } = await runAutoPinnedRotationCase({
+    const { usageStats, result } = await runAutoPinnedRotationCase({
       errorMessage: "request ended without sending any chunks",
       sessionKey: "agent:test:timeout-no-cooldown",
       runId: "run:timeout-no-cooldown",
     });
     expect(typeof usageStats["openai:p2"]?.lastUsed).toBe("number");
     expect(usageStats["openai:p1"]?.cooldownUntil).toBeUndefined();
+    expect(result.turnId).toBe("turn-test");
   });
 
   it("does not rotate for compaction timeouts", async () => {
@@ -440,7 +444,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
 
       mockSingleErrorAttempt({ errorMessage: "rate limit" });
 
-      await runEmbeddedPiAgent({
+    const result = await runEmbeddedPiAgent({
         sessionId: "session:test",
         sessionKey: "agent:test:user",
         sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -488,7 +492,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
         }),
       );
 
-      await runEmbeddedPiAgent({
+    const result = await runEmbeddedPiAgent({
         sessionId: "session:test",
         sessionKey: "agent:test:mismatch",
         sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -682,7 +686,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
 
       let thrown: unknown;
       try {
-        await runEmbeddedPiAgent({
+    const result = await runEmbeddedPiAgent({
           sessionId: "session:test",
           sessionKey: "agent:test:billing-failover-active-model",
           sessionFile: path.join(workspaceDir, "session.jsonl"),

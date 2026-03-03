@@ -24,12 +24,12 @@ export type EmbeddedRunAttemptParams = EmbeddedRunAttemptBase & {
 };
 
 export type EmbeddedRunAttemptResult = {
+  /** Stable turn id for correlating OTLP usage ↔ context snapshots. */
+  turnId?: string;
   aborted: boolean;
   timedOut: boolean;
   /** True if the timeout occurred while compaction was in progress or pending. */
   timedOutDuringCompaction: boolean;
-  /** Stable turn id for correlating OTLP usage ↔ context snapshots. */
-  turnId?: string;
   promptError: unknown;
   sessionIdUsed: string;
   systemPromptReport?: SessionSystemPromptReport;

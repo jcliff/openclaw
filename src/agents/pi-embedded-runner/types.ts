@@ -63,6 +63,8 @@ export type EmbeddedPiRunMeta = {
 };
 
 export type EmbeddedPiRunResult = {
+  /** Convenience accessor for callers; equivalent to meta.turnId. */
+  turnId?: string;
   payloads?: Array<{
     text?: string;
     mediaUrl?: string;
