@@ -30,6 +30,31 @@ describe("context snapshots (OC#4)", () => {
     expect(parsed.error).toBeNull();
   });
 
+  it("request snapshot canonicalizes tool call IDs for stability", () => {
+    const files = buildRequestSnapshotFiles({
+      turnId: "turn-124",
+      provider: "openai",
+      model: "gpt-test",
+      prompt: "hello",
+      messages: [
+        {
+          role: "assistant",
+          content: [
+            { type: "toolCall", id: "toolu_01TxQJVz", name: "exec", arguments: {} },
+            { type: "toolResult", toolCallId: "toolu_01TxQJVz", result: "ok" },
+          ],
+        },
+      ] as unknown as import("@mariozechner/pi-agent-core").AgentMessage[],
+    });
+
+    const parsed = JSON.parse(files["turn-bundle.json"]);
+    const blocks = parsed.messages[0].content;
+    expect(blocks[0].id).toBe("toolu_01TxQJVz");
+    expect(blocks[0].id_norm).toBe("toolu01TxQJVz");
+    expect(blocks[1].toolCallId).toBe("toolu_01TxQJVz");
+    expect(blocks[1].toolCallId_norm).toBe("toolu01TxQJVz");
+  });
+
   it("response snapshot emits assistant-response.json (phase=response)", () => {
     const files = buildResponseSnapshotFiles({
       turnId: "turn-123",

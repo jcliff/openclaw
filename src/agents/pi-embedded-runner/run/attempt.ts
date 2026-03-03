@@ -429,6 +429,50 @@ function summarizeSessionContext(messages: AgentMessage[]): {
   };
 }
 
+function normalizeToolCallIdForDiffing(id: string): string {
+  // Provider tool-call IDs are transport-level and may vary in punctuation
+  // (e.g. "toolu_abc" vs "tooluabc"). For turn-bundle snapshots we preserve raw ids, but also
+  // compute a normalized id to reduce diff noise.
+  return id.replace(/^toolu_/, "toolu");
+}
+
+function annotateMessagesForSnapshots(messages: AgentMessage[]): AgentMessage[] {
+  return messages.map((msg) => {
+    const content = (msg as { content?: unknown }).content;
+    if (!Array.isArray(content)) {
+      return msg;
+    }
+
+    const nextContent = content.map((block) => {
+      if (!block || typeof block !== "object") {
+        return block;
+      }
+
+      const typed = block as Record<string, unknown>;
+      if (typed.type === "toolCall" && typeof typed.id === "string") {
+        return {
+          ...typed,
+          id_norm: normalizeToolCallIdForDiffing(typed.id),
+        };
+      }
+
+      if (typed.type === "toolResult" && typeof typed.toolCallId === "string") {
+        return {
+          ...typed,
+          toolCallId_norm: normalizeToolCallIdForDiffing(typed.toolCallId),
+        };
+      }
+
+      return block;
+    });
+
+    return {
+      ...msg,
+      content: nextContent,
+    } as AgentMessage;
+  });
+}
+
 export function buildRequestSnapshotFiles(params: {
   turnId: string;
   provider: string;
@@ -444,7 +488,7 @@ export function buildRequestSnapshotFiles(params: {
         provider: params.provider,
         model: params.model,
         prompt: params.prompt,
-        messages: params.messages,
+        messages: annotateMessagesForSnapshots(params.messages),
         stop_reason: null,
         usage: null,
         error: null,
@@ -476,7 +520,7 @@ export function buildResponseSnapshotFiles(params: {
         provider: params.provider,
         model: params.model,
         prompt: params.prompt,
-        messages: params.messages,
+        messages: annotateMessagesForSnapshots(params.messages),
         stop_reason: params.stopReason,
         usage: params.usage,
         error: params.error,
@@ -508,7 +552,7 @@ export function buildResponseTurnBundlePatch(params: {
         provider: params.provider,
         model: params.model,
         prompt: params.prompt,
-        messages: params.messages,
+        messages: annotateMessagesForSnapshots(params.messages),
         stop_reason: params.stopReason,
         usage: params.usage,
         error: params.error,
