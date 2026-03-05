@@ -210,6 +210,12 @@ export type DiscordAccountConfig = {
    * - "allowlist": only allow channels present in discord.guilds.*.channels
    */
   groupPolicy?: GroupPolicy;
+  /**
+   * System prompt injected for all guild (group) channel messages.
+   * Prepended before any per-channel systemPrompt.
+   * Use this to enforce team-wide communication discipline (e.g. brevity, no narration).
+   */
+  defaultGroupSystemPrompt?: string;
   /** Outbound text chunk size (chars). Default: 2000. */
   textChunkLimit?: number;
   /** Chunking mode: "length" (default) splits by size; "newline" splits on every newline. */

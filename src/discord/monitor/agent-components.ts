@@ -835,7 +835,12 @@ async function dispatchDiscordComponentEvent(params: {
     scope: channelCtx.isThread ? "thread" : "channel",
   });
   const allowNameMatching = isDangerousNameMatchingEnabled(ctx.discordConfig);
-  const groupSystemPrompt = channelConfig?.systemPrompt?.trim() || undefined;
+  const groupSystemPromptParts = [
+    ctx.discordConfig?.defaultGroupSystemPrompt?.trim() || null,
+    channelConfig?.systemPrompt?.trim() || null,
+  ].filter((entry): entry is string => Boolean(entry));
+  const groupSystemPrompt =
+    groupSystemPromptParts.length > 0 ? groupSystemPromptParts.join("\n\n") : undefined;
   const ownerAllowFrom = resolveDiscordOwnerAllowFrom({
     channelConfig,
     guildInfo,
