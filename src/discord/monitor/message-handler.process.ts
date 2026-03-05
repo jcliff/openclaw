@@ -29,7 +29,6 @@ import { danger, logVerbose, shouldLogVerbose } from "../../globals.js";
 import { convertMarkdownTables } from "../../markdown/tables.js";
 import { buildAgentSessionKey } from "../../routing/resolve-route.js";
 import { resolveThreadSessionKeys } from "../../routing/session-key.js";
-import { buildUntrustedChannelMetadata } from "../../security/channel-metadata.js";
 import { stripReasoningTagsFromText } from "../../shared/text/reasoning-tags.js";
 import { truncateUtf16Safe } from "../../utils.js";
 import { chunkDiscordTextWithMode } from "../chunk.js";
@@ -190,13 +189,6 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
   const forumContextLine = isForumStarter ? `[Forum parent: #${forumParentSlug}]` : null;
   const groupChannel = isGuildMessage && displayChannelSlug ? `#${displayChannelSlug}` : undefined;
   const groupSubject = isDirectMessage ? undefined : groupChannel;
-  const untrustedChannelMetadata = isGuildMessage
-    ? buildUntrustedChannelMetadata({
-        source: "discord",
-        label: "Discord channel topic",
-        entries: [channelInfo?.topic],
-      })
-    : undefined;
   const senderName = sender.isPluralKit
     ? (sender.name ?? author.username)
     : (data.member?.nickname ?? author.globalName ?? author.username);
@@ -224,6 +216,14 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
     storePath,
     sessionKey: route.sessionKey,
   });
+  const isFirstMessageInSession = previousTimestamp == null;
+  const channelTopicRaw = typeof channelInfo?.topic === "string" ? channelInfo.topic.trim() : "";
+  const channelTopic = channelTopicRaw.replace(/\s+/g, " ").trim();
+  const channelTopicNote =
+    isGuildMessage && isFirstMessageInSession && channelTopic
+      ? `topic: ${channelTopic.length > 120 ? channelTopic.slice(0, 117).trimEnd() + "..." : channelTopic}`
+      : undefined;
+
   let combinedBody = formatInboundEnvelope({
     channel: "Discord",
     from: fromLabel,
@@ -257,6 +257,10 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
   const replyContext = resolveReplyContext(message, resolveDiscordMessageText);
   if (forumContextLine) {
     combinedBody = `${combinedBody}\n${forumContextLine}`;
+  }
+  if (channelTopicNote) {
+    // Show channel topic once at session start (keep it tiny; no warning block).
+    combinedBody = `${combinedBody}\n\n${channelTopicNote}`;
   }
 
   let threadStarterBody: string | undefined;
@@ -353,7 +357,7 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
     SenderTag: senderTag,
     GroupSubject: groupSubject,
     GroupChannel: groupChannel,
-    UntrustedContext: untrustedChannelMetadata ? [untrustedChannelMetadata] : undefined,
+    UntrustedContext: undefined,
     GroupSystemPrompt: isGuildMessage ? groupSystemPrompt : undefined,
     GroupSpace: isGuildMessage ? (guildInfo?.id ?? guildSlug) || undefined : undefined,
     OwnerAllowFrom: ownerAllowFrom,

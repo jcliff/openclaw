@@ -49,7 +49,6 @@ import { buildPairingReply } from "../../pairing/pairing-messages.js";
 import { upsertChannelPairingRequest } from "../../pairing/pairing-store.js";
 import { resolveAgentRoute } from "../../routing/resolve-route.js";
 import { resolveAgentIdFromSessionKey } from "../../routing/session-key.js";
-import { buildUntrustedChannelMetadata } from "../../security/channel-metadata.js";
 import { readStoreAllowFromForDmPolicy } from "../../security/dm-policy-shared.js";
 import { chunkItems } from "../../utils/chunk-items.js";
 import { withTimeout } from "../../utils/with-timeout.js";
@@ -1549,18 +1548,9 @@ async function dispatchDiscordCommandInteraction(params: {
           return systemPromptParts.length > 0 ? systemPromptParts.join("\n\n") : undefined;
         })()
       : undefined,
-    UntrustedContext: isGuild
-      ? (() => {
-          const channelTopic =
-            channel && "topic" in channel ? (channel.topic ?? undefined) : undefined;
-          const untrustedChannelMetadata = buildUntrustedChannelMetadata({
-            source: "discord",
-            label: "Discord channel topic",
-            entries: [channelTopic],
-          });
-          return untrustedChannelMetadata ? [untrustedChannelMetadata] : undefined;
-        })()
-      : undefined,
+    // Channel topics are noisy and motivation-hostile when appended to every message.
+    // For commands, we omit them entirely.
+    UntrustedContext: undefined,
     OwnerAllowFrom: ownerAllowFrom,
     SenderName: user.globalName ?? user.username,
     SenderId: user.id,
