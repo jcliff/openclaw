@@ -215,6 +215,15 @@ export const OpenClawSchema = z
           })
           .strict()
           .optional(),
+        envelopeMin: z
+          .object({
+            enabled: z.boolean().optional(),
+            agents: z.array(z.string()).optional(),
+            providers: z.array(z.string()).optional(),
+            omitPromptEnvelope: z.boolean().optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .optional(),

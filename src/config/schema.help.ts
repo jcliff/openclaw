@@ -433,6 +433,15 @@ export const FIELD_HELP: Record<string, string> = {
     "Include full message payloads in trace output (default: true).",
   "diagnostics.cacheTrace.includePrompt": "Include prompt text in trace output (default: true).",
   "diagnostics.cacheTrace.includeSystem": "Include system prompt in trace output (default: true).",
+  "diagnostics.envelopeMin":
+    "Reduce prompt token overhead by minimizing repeated inbound message envelope blocks (OC#15).",
+  "diagnostics.envelopeMin.enabled": "Enable envelope minimization (default: false).",
+  "diagnostics.envelopeMin.agents":
+    "Optional allowlist of agent ids/identity names this applies to (default: all agents).",
+  "diagnostics.envelopeMin.providers":
+    "Optional allowlist of providers this applies to (e.g. ['discord']).",
+  "diagnostics.envelopeMin.omitPromptEnvelope":
+    "When true, omit inbound meta JSON system prompt and untrusted envelope blocks from the model prompt.",
   "tools.exec.applyPatch.enabled":
     "Experimental. Enables apply_patch for OpenAI models when allowed by tool policy.",
   "tools.exec.applyPatch.workspaceOnly":

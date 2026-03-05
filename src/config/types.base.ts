@@ -212,6 +212,17 @@ export type DiagnosticsContextSnapshotConfig = {
   maxTotalBytes?: number;
 };
 
+export type DiagnosticsEnvelopeMinConfig = {
+  /** Enable prompt envelope minimization (OC#15). Default: false. */
+  enabled?: boolean;
+  /** Apply only to these agent ids/identity names. Empty/omitted means all agents. */
+  agents?: string[];
+  /** Apply only to these provider ids (e.g. ["discord"]). Empty/omitted means all. */
+  providers?: string[];
+  /** When true, omit inbound meta JSON system prompt and untrusted envelope blocks. */
+  omitPromptEnvelope?: boolean;
+};
+
 export type DiagnosticsConfig = {
   enabled?: boolean;
   /** Optional ad-hoc diagnostics flags (e.g. "telegram.http"). */
@@ -220,6 +231,8 @@ export type DiagnosticsConfig = {
   cacheTrace?: DiagnosticsCacheTraceConfig;
   /** OC#3: per-turn context snapshot POSTed to Drumbeat git blob store. */
   contextSnapshot?: DiagnosticsContextSnapshotConfig;
+  /** OC#15: minimize per-turn prompt envelope overhead. */
+  envelopeMin?: DiagnosticsEnvelopeMinConfig;
 };
 
 export type WebReconnectConfig = {

@@ -19,6 +19,20 @@ function parseConversationInfoPayload(text: string): Record<string, unknown> {
 }
 
 describe("buildInboundMetaSystemPrompt", () => {
+  it("returns empty string when omit=true", () => {
+    const prompt = buildInboundMetaSystemPrompt(
+      {
+        OriginatingTo: "telegram:5494292670",
+        OriginatingChannel: "telegram",
+        Provider: "telegram",
+        Surface: "telegram",
+        ChatType: "direct",
+      } as TemplateContext,
+      { omit: true },
+    );
+    expect(prompt).toBe("");
+  });
+
   it("includes session-stable routing fields", () => {
     const prompt = buildInboundMetaSystemPrompt({
       MessageSid: "123",
@@ -92,6 +106,31 @@ describe("buildInboundMetaSystemPrompt", () => {
 });
 
 describe("buildInboundUserContextPrefix", () => {
+  it("returns minimal speaker label when omit=true", () => {
+    const text = buildInboundUserContextPrefix(
+      {
+        ChatType: "group",
+        MessageSid: "msg-1",
+        ConversationLabel: "ops-room",
+        SenderName: "jordan",
+      } as TemplateContext,
+      { omit: true },
+    );
+    expect(text).toBe("jordan:");
+  });
+
+  it("returns empty string for direct chats when omit=true", () => {
+    const text = buildInboundUserContextPrefix(
+      {
+        ChatType: "direct",
+        MessageSid: "msg-1",
+        SenderName: "jordan",
+      } as TemplateContext,
+      { omit: true },
+    );
+    expect(text).toBe("");
+  });
+
   it("omits conversation label block for direct chats", () => {
     const text = buildInboundUserContextPrefix({
       ChatType: "direct",

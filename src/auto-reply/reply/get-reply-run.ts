@@ -264,8 +264,21 @@ export async function runPreparedReply(
       })
     : "";
   const groupSystemPrompt = sessionCtx.GroupSystemPrompt?.trim() ?? "";
+  const envelopeMinCfg = cfg.diagnostics?.envelopeMin;
+  const envelopeMinEnabled =
+    envelopeMinCfg?.enabled === true &&
+    (envelopeMinCfg.agents == null || envelopeMinCfg.agents.length === 0
+      ? true
+      : envelopeMinCfg.agents.includes(agentId)) &&
+    (envelopeMinCfg.providers == null || envelopeMinCfg.providers.length === 0
+      ? true
+      : envelopeMinCfg.providers.includes((sessionCtx.Provider ?? "").trim()) ||
+        envelopeMinCfg.providers.includes((sessionCtx.Surface ?? "").trim()));
+  const omitEnvelope = envelopeMinEnabled && envelopeMinCfg?.omitPromptEnvelope !== false;
+
   const inboundMetaPrompt = buildInboundMetaSystemPrompt(
     isNewSession ? sessionCtx : { ...sessionCtx, ThreadStarterBody: undefined },
+    { omit: omitEnvelope },
   );
   const extraSystemPrompt = [inboundMetaPrompt, groupChatContext, groupIntro, groupSystemPrompt]
     .filter(Boolean)
@@ -297,6 +310,7 @@ export async function runPreparedReply(
             : {}),
         }
       : { ...sessionCtx, ThreadStarterBody: undefined },
+    { omit: omitEnvelope },
   );
   const baseBodyForPrompt = isBareSessionReset
     ? baseBodyFinal

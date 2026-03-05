@@ -31,7 +31,14 @@ function formatConversationTimestamp(value: unknown): string | undefined {
   }
 }
 
-export function buildInboundMetaSystemPrompt(ctx: TemplateContext): string {
+export function buildInboundMetaSystemPrompt(
+  ctx: TemplateContext,
+  opts?: { omit?: boolean },
+): string {
+  if (opts?.omit) {
+    return "";
+  }
+
   const chatType = normalizeChatType(ctx.ChatType);
   const isDirect = !chatType || chatType === "direct";
 
@@ -80,10 +87,31 @@ export function buildInboundMetaSystemPrompt(ctx: TemplateContext): string {
   ].join("\n");
 }
 
-export function buildInboundUserContextPrefix(ctx: TemplateContext): string {
-  const blocks: string[] = [];
+export function buildInboundUserContextPrefix(
+  ctx: TemplateContext,
+  opts?: { omit?: boolean },
+): string {
   const chatType = normalizeChatType(ctx.ChatType);
   const isDirect = !chatType || chatType === "direct";
+
+  if (opts?.omit) {
+    // Keep a minimal speaker label in group chats even when we omit the full
+    // inbound envelope blocks. Without attribution, models can lose track of
+    // who is speaking.
+    if (isDirect) {
+      return "";
+    }
+    const label = resolveSenderLabel({
+      name: safeTrim(ctx.SenderName),
+      username: safeTrim(ctx.SenderUsername),
+      tag: safeTrim(ctx.SenderTag),
+      e164: safeTrim(ctx.SenderE164),
+    });
+    const fallback = safeTrim(ctx.SenderUsername) ?? safeTrim(ctx.SenderId) ?? "sender";
+    return `${label || fallback}:`;
+  }
+
+  const blocks: string[] = [];
 
   const messageId = safeTrim(ctx.MessageSid);
   const messageIdFull = safeTrim(ctx.MessageSidFull);
