@@ -672,6 +672,7 @@ export async function runEmbeddedAttempt(
           senderE164: params.senderE164,
           senderIsOwner: params.senderIsOwner,
           sessionKey: params.sessionKey ?? params.sessionId,
+          getTurnId: () => params.runId,
           agentDir,
           workspaceDir: effectiveWorkspace,
           config: params.config,

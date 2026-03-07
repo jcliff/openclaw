@@ -188,6 +188,8 @@ export function createOpenClawCodingTools(options?: {
   messageThreadId?: string | number;
   sandbox?: SandboxContext | null;
   sessionKey?: string;
+  /** Callback returning the current turn/run ID for exec provenance tracing. */
+  getTurnId?: () => string | undefined;
   agentDir?: string;
   workspaceDir?: string;
   config?: OpenClawConfig;
@@ -387,6 +389,7 @@ export function createOpenClawCodingTools(options?: {
     allowBackground,
     scopeKey,
     sessionKey: options?.sessionKey,
+    getTurnId: options?.getTurnId,
     messageProvider: options?.messageProvider,
     currentChannelId: options?.currentChannelId,
     currentThreadTs: options?.currentThreadTs,

@@ -3,6 +3,7 @@ import path from "node:path";
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import { type ExecHost, maxAsk, minSecurity } from "../infra/exec-approvals.js";
 import { resolveExecSafeBinRuntimePolicy } from "../infra/exec-safe-bin-runtime-policy.js";
+import { generateSecureToken } from "../infra/secure-random.js";
 import {
   getShellPathFromLoginShell,
   resolveShellEnvFallbackTimeoutMs,
@@ -404,6 +405,15 @@ export function createExecTool(
       if (sessionKey) {
         env["OPENCLAW_SESSION_KEY"] = sessionKey;
       }
+
+      // Inject turn + trace IDs for full provenance through ocsh shims.
+      // OPENCLAW_TURN_ID: current agent turn (from mutable ref, updated each turn).
+      // OPENCLAW_TRACE_ID: unique per exec call — links start/end records to this invocation.
+      const turnId = defaults?.getTurnId?.();
+      if (turnId) {
+        env["OPENCLAW_TURN_ID"] = turnId;
+      }
+      env["OPENCLAW_TRACE_ID"] = generateSecureToken(16);
 
       if (host === "node") {
         return executeNodeHostCommand({

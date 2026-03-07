@@ -20,6 +20,12 @@ export type ExecToolDefaults = {
   allowBackground?: boolean;
   scopeKey?: string;
   sessionKey?: string;
+  /**
+   * Callback invoked at exec-time to get the current turn ID.
+   * Use a mutable ref so attempt.ts can update it each turn without
+   * recreating the exec tool.  Returns undefined when no turn is active.
+   */
+  getTurnId?: () => string | undefined;
   messageProvider?: string;
   currentChannelId?: string;
   currentThreadTs?: string;
