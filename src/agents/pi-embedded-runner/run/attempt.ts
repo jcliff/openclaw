@@ -429,15 +429,46 @@ function summarizeSessionContext(messages: AgentMessage[]): {
   };
 }
 
+function canonicalizeToolCallIdForSnapshot(id: string): string {
+  // Canonical form for snapshot stability: ALWAYS include toolu_ prefix.
+  // We’ve seen upstream churn between toolu_... and toolu...; snapshots should not.
+  if (id.startsWith("toolu_")) {
+    return id;
+  }
+  if (id.startsWith("toolu") && id.length > 5) {
+    return `toolu_${id.slice(5)}`;
+  }
+  return id;
+}
+
 function normalizeToolCallIdForDiffing(id: string): string {
-  // Provider tool-call IDs are transport-level and may vary in punctuation
-  // (e.g. "toolu_abc" vs "tooluabc"). For turn-bundle snapshots we preserve raw ids, but also
-  // compute a normalized id to reduce diff noise.
-  return id.replace(/^toolu_/, "toolu");
+  // Normalized ID for diffing/search: strip punctuation.
+  return id.replace(/[^a-zA-Z0-9]/g, "");
 }
 
 function annotateMessagesForSnapshots(messages: AgentMessage[]): AgentMessage[] {
   return messages.map((msg) => {
+    // toolResult messages carry toolCallId/toolUseId at top-level, not in content blocks.
+    if ((msg as { role?: unknown }).role === "toolResult") {
+      const rec = msg as unknown as { toolCallId?: unknown; toolUseId?: unknown };
+      const nextToolCallId =
+        typeof rec.toolCallId === "string"
+          ? canonicalizeToolCallIdForSnapshot(rec.toolCallId)
+          : rec.toolCallId;
+      const nextToolUseId =
+        typeof rec.toolUseId === "string"
+          ? canonicalizeToolCallIdForSnapshot(rec.toolUseId)
+          : rec.toolUseId;
+      if (nextToolCallId === rec.toolCallId && nextToolUseId === rec.toolUseId) {
+        return msg;
+      }
+      return {
+        ...(msg as unknown as Record<string, unknown>),
+        ...(nextToolCallId !== undefined ? { toolCallId: nextToolCallId } : {}),
+        ...(nextToolUseId !== undefined ? { toolUseId: nextToolUseId } : {}),
+      } as AgentMessage;
+    }
+
     const content = (msg as { content?: unknown }).content;
     if (!Array.isArray(content)) {
       return msg;
@@ -450,16 +481,20 @@ function annotateMessagesForSnapshots(messages: AgentMessage[]): AgentMessage[] 
 
       const typed = block as Record<string, unknown>;
       if (typed.type === "toolCall" && typeof typed.id === "string") {
+        const id = canonicalizeToolCallIdForSnapshot(typed.id);
         return {
           ...typed,
-          id_norm: normalizeToolCallIdForDiffing(typed.id),
+          id,
+          id_norm: normalizeToolCallIdForDiffing(id),
         };
       }
 
       if (typed.type === "toolResult" && typeof typed.toolCallId === "string") {
+        const toolCallId = canonicalizeToolCallIdForSnapshot(typed.toolCallId);
         return {
           ...typed,
-          toolCallId_norm: normalizeToolCallIdForDiffing(typed.toolCallId),
+          toolCallId,
+          toolCallId_norm: normalizeToolCallIdForDiffing(toolCallId),
         };
       }
 

@@ -41,8 +41,8 @@ describe("context snapshots (OC#4)", () => {
         {
           role: "assistant",
           content: [
-            { type: "toolCall", id: "toolu_01TxQJVz", name: "exec", arguments: {} },
-            { type: "toolResult", toolCallId: "toolu_01TxQJVz", result: "ok" },
+            { type: "toolCall", id: "toolu01TxQJVz", name: "exec", arguments: {} },
+            { type: "toolResult", toolCallId: "toolu01TxQJVz", result: "ok" },
           ],
         },
       ] as unknown as import("@mariozechner/pi-agent-core").AgentMessage[],
