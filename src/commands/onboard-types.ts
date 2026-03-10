@@ -6,7 +6,6 @@ export type AuthChoice =
   // Legacy alias for `setup-token` (kept for backwards CLI compatibility).
   | "oauth"
   | "setup-token"
-  | "claude-cli"
   | "token"
   | "chutes"
   | "vllm"
@@ -24,7 +23,6 @@ export type AuthChoice =
   | "venice-api-key"
   | "together-api-key"
   | "huggingface-api-key"
-  | "codex-cli"
   | "apiKey"
   | "gemini-api-key"
   | "google-gemini-cli"

@@ -17,11 +17,6 @@ const ACP_AGENT_RESUME_HINT_BY_KEY = new Map<string, SessionResumeHintResolver>(
     ({ agentSessionId }) =>
       `resume in Codex CLI: \`codex resume ${agentSessionId}\` (continues this conversation).`,
   ],
-  [
-    "codex-cli",
-    ({ agentSessionId }) =>
-      `resume in Codex CLI: \`codex resume ${agentSessionId}\` (continues this conversation).`,
-  ],
 ]);
 
 function normalizeText(value: unknown): string | undefined {

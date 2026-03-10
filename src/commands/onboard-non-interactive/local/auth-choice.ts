@@ -135,17 +135,6 @@ export async function applyNonInteractiveAuthChoice(params: {
     return true;
   };
 
-  if (authChoice === "claude-cli" || authChoice === "codex-cli") {
-    runtime.error(
-      [
-        `Auth choice "${authChoice}" is deprecated.`,
-        'Use "--auth-choice token" (Anthropic setup-token) or "--auth-choice openai-codex".',
-      ].join("\n"),
-    );
-    runtime.exit(1);
-    return null;
-  }
-
   if (authChoice === "setup-token") {
     runtime.error(
       [

@@ -188,34 +188,23 @@ openclaw models auth paste-token --provider anthropic --profile-id anthropic:set
 OPENCLAW_LIVE_SETUP_TOKEN=1 OPENCLAW_LIVE_SETUP_TOKEN_PROFILE=anthropic:setup-token-test pnpm test:live src/agents/anthropic.setup-token.live.test.ts
 ```
 
-## 实时测试：CLI 后端冒烟测试（Claude Code CLI 或其他本地 CLI）
+## 实时测试：CLI 后端冒烟测试（本地 CLI）
 
 - 测试：`src/gateway/gateway-cli-backend.live.test.ts`
 - 目标：使用本地 CLI 后端验证 Gateway 网关 + 智能体管道，而不影响你的默认配置。
 - 启用：
   - `pnpm test:live`（或直接调用 Vitest 时使用 `OPENCLAW_LIVE_TEST=1`）
   - `OPENCLAW_LIVE_CLI_BACKEND=1`
-- 默认值：
-  - 模型：`claude-cli/claude-sonnet-4-5`
-  - 命令：`claude`
-  - 参数：`["-p","--output-format","json","--dangerously-skip-permissions"]`
-- 覆盖（可选）：
-  - `OPENCLAW_LIVE_CLI_BACKEND_MODEL="claude-cli/claude-opus-4-5"`
-  - `OPENCLAW_LIVE_CLI_BACKEND_MODEL="codex-cli/gpt-5.2-codex"`
-  - `OPENCLAW_LIVE_CLI_BACKEND_COMMAND="/full/path/to/claude"`
-  - `OPENCLAW_LIVE_CLI_BACKEND_ARGS='["-p","--output-format","json","--permission-mode","bypassPermissions"]'`
-  - `OPENCLAW_LIVE_CLI_BACKEND_CLEAR_ENV='["ANTHROPIC_API_KEY","ANTHROPIC_API_KEY_OLD"]'`
-  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_PROBE=1` 发送真实图像附件（路径注入到提示中）。
-  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_ARG="--image"` 将图像文件路径作为 CLI 参数传递而非提示注入。
-  - `OPENCLAW_LIVE_CLI_BACKEND_IMAGE_MODE="repeat"`（或 `"list"`）控制设置 `IMAGE_ARG` 时如何传递图像参数。
-  - `OPENCLAW_LIVE_CLI_BACKEND_RESUME_PROBE=1` 发送第二轮并验证恢复流程。
-- `OPENCLAW_LIVE_CLI_BACKEND_DISABLE_MCP_CONFIG=0` 保持 Claude Code CLI MCP 配置启用（默认使用临时空文件禁用 MCP 配置）。
+- 需要显式提供后端（不再内置默认值）：
+  - `OPENCLAW_LIVE_CLI_BACKEND_MODEL="my-cli/my-model"`
+  - `OPENCLAW_LIVE_CLI_BACKEND_COMMAND="/full/path/to/your-cli"`
 
 示例：
 
 ```bash
 OPENCLAW_LIVE_CLI_BACKEND=1 \
-  OPENCLAW_LIVE_CLI_BACKEND_MODEL="claude-cli/claude-sonnet-4-5" \
+  OPENCLAW_LIVE_CLI_BACKEND_MODEL="my-cli/my-model" \
+  OPENCLAW_LIVE_CLI_BACKEND_COMMAND="/full/path/to/your-cli" \
   pnpm test:live src/gateway/gateway-cli-backend.live.test.ts
 ```
 

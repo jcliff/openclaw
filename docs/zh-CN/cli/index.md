@@ -670,7 +670,6 @@ Gmail Pub/Sub 钩子设置 + 运行器。参见 [/automation/gmail-pubsub](/auto
 - `--reset`（重置 dev 配置 + 凭证 + 会话 + 工作区）
 - `--force`（终止端口上的现有监听器）
 - `--verbose`
-- `--claude-cli-logs`
 - `--ws-log <auto|full|compact>`
 - `--compact`（`--ws-log compact` 的别名）
 - `--raw-stream`

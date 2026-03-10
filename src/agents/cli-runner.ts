@@ -30,7 +30,7 @@ import { classifyFailoverReason, isFailoverErrorMessage } from "./pi-embedded-he
 import type { EmbeddedPiRunResult } from "./pi-embedded-runner.js";
 import { redactRunIdentifier, resolveRunWorkspaceDir } from "./workspace-run.js";
 
-const log = createSubsystemLogger("agent/claude-cli");
+const log = createSubsystemLogger("agent/cli-backend");
 
 export async function runCliAgent(params: {
   sessionId: string;
@@ -384,7 +384,7 @@ export async function runClaudeCliAgent(params: {
     workspaceDir: params.workspaceDir,
     config: params.config,
     prompt: params.prompt,
-    provider: params.provider ?? "claude-cli",
+    provider: params.provider ?? "cli",
     model: params.model ?? "opus",
     thinkLevel: params.thinkLevel,
     timeoutMs: params.timeoutMs,

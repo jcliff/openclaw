@@ -1707,7 +1707,6 @@ MiniMax 认证：设置 `MINIMAX_API_KEY`（环境变量）或配置 `models.pro
 
 - CLI 后端**以文本为主**；工具始终禁用。
 - 设置 `sessionArg` 时支持会话；会话 id 按后端持久化。
-- 对于 `claude-cli`，默认值已内置。如果 PATH 不完整（launchd/systemd），请覆盖命令路径。
 
 示例：
 
@@ -1716,9 +1715,6 @@ MiniMax 认证：设置 `MINIMAX_API_KEY`（环境变量）或配置 `models.pro
   agents: {
     defaults: {
       cliBackends: {
-        "claude-cli": {
-          command: "/opt/homebrew/bin/claude",
-        },
         "my-cli": {
           command: "my-cli",
           args: ["--json"],

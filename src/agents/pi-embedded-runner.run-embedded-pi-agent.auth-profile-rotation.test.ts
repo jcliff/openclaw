@@ -354,7 +354,7 @@ async function runTurnWithCooldownSeed(params: {
     });
     mockSingleSuccessfulAttempt();
 
-    const result = await runEmbeddedPiAgent({
+    const _result = await runEmbeddedPiAgent({
       sessionId: "session:test",
       sessionKey: params.sessionKey,
       sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -444,7 +444,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
 
       mockSingleErrorAttempt({ errorMessage: "rate limit" });
 
-    const result = await runEmbeddedPiAgent({
+      const _result = await runEmbeddedPiAgent({
         sessionId: "session:test",
         sessionKey: "agent:test:user",
         sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -492,7 +492,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
         }),
       );
 
-    const result = await runEmbeddedPiAgent({
+      const _result = await runEmbeddedPiAgent({
         sessionId: "session:test",
         sessionKey: "agent:test:mismatch",
         sessionFile: path.join(workspaceDir, "session.jsonl"),
@@ -686,7 +686,7 @@ describe("runEmbeddedPiAgent auth profile rotation", () => {
 
       let thrown: unknown;
       try {
-    const result = await runEmbeddedPiAgent({
+        const _result = await runEmbeddedPiAgent({
           sessionId: "session:test",
           sessionKey: "agent:test:billing-failover-active-model",
           sessionFile: path.join(workspaceDir, "session.jsonl"),

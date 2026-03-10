@@ -57,8 +57,11 @@ apps/ios/*.xcfilelist
 
 # Vendor build artifacts
 vendor/a2ui/renderers/lit/dist/
+# A2UI bundle is generated in full builds, but unit tests expect the asset route
+# to exist. We keep a small placeholder a2ui.bundle.js checked in.
 src/canvas-host/a2ui/*.bundle.js
 src/canvas-host/a2ui/*.map
+!src/canvas-host/a2ui/a2ui.bundle.js
 .bundle.hash
 
 # fastlane (iOS)
@@ -121,3 +124,9 @@ dist/protocol.schema.json
 # Synthing
 **/.stfolder/
 git-hooks/commit-msg
+
+# A2UI bundle is generated in full builds, but unit tests expect the asset route
+# to exist. We keep a small placeholder a2ui.bundle.js checked in.
+src/canvas-host/a2ui/*.bundle.js
+src/canvas-host/a2ui/*.map
+!src/canvas-host/a2ui/a2ui.bundle.js

@@ -44,26 +44,6 @@ export const LEGACY_CONFIG_MIGRATIONS_PART_3: LegacyConfigMigration[] = [
       delete raw.memorySearch;
     },
   },
-  {
-    id: "auth.anthropic-claude-cli-mode-oauth",
-    describe: "Switch anthropic:claude-cli auth profile mode to oauth",
-    apply: (raw, changes) => {
-      const auth = getRecord(raw.auth);
-      const profiles = getRecord(auth?.profiles);
-      if (!profiles) {
-        return;
-      }
-      const claudeCli = getRecord(profiles["anthropic:claude-cli"]);
-      if (!claudeCli) {
-        return;
-      }
-      if (claudeCli.mode !== "token") {
-        return;
-      }
-      claudeCli.mode = "oauth";
-      changes.push('Updated auth.profiles["anthropic:claude-cli"].mode → "oauth".');
-    },
-  },
   // tools.alsoAllow migration removed (field not shipped in prod; enforce via schema instead).
   {
     id: "tools.bash->tools.exec",
