@@ -52,8 +52,8 @@ describe("createPersistentDedupe", () => {
     });
 
     const [first, second] = await Promise.all([
-      dedupe.checkAndRecord("race-key", { namespace: "feishu" }),
-      dedupe.checkAndRecord("race-key", { namespace: "feishu" }),
+      dedupe.checkAndRecord("race-key", { namespace: "discord" }),
+      dedupe.checkAndRecord("race-key", { namespace: "discord" }),
     ]);
     expect(first).toBe(true);
     expect(second).toBe(false);

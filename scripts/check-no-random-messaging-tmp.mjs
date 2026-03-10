@@ -13,7 +13,7 @@ const sourceRoots = [
   path.join(repoRoot, "src", "media-understanding"),
   path.join(repoRoot, "extensions"),
 ];
-const allowedCallsites = new Set([path.join(repoRoot, "extensions", "feishu", "src", "dedup.ts")]);
+const allowedCallsites = new Set([]);
 
 function isTestLikeFile(filePath) {
   return (

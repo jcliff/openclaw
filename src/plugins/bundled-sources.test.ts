@@ -23,21 +23,21 @@ describe("bundled plugin sources", () => {
       candidates: [
         {
           origin: "global",
-          rootDir: "/global/feishu",
-          packageName: "@openclaw/feishu",
-          packageManifest: { install: { npmSpec: "@openclaw/feishu" } },
+          rootDir: "/global/discord",
+          packageName: "@openclaw/discord",
+          packageManifest: { install: { npmSpec: "@openclaw/discord" } },
         },
         {
           origin: "bundled",
-          rootDir: "/app/extensions/feishu",
-          packageName: "@openclaw/feishu",
-          packageManifest: { install: { npmSpec: "@openclaw/feishu" } },
+          rootDir: "/app/extensions/discord",
+          packageName: "@openclaw/discord",
+          packageManifest: { install: { npmSpec: "@openclaw/discord" } },
         },
         {
           origin: "bundled",
-          rootDir: "/app/extensions/feishu-dup",
-          packageName: "@openclaw/feishu",
-          packageManifest: { install: { npmSpec: "@openclaw/feishu" } },
+          rootDir: "/app/extensions/discord-dup",
+          packageName: "@openclaw/discord",
+          packageManifest: { install: { npmSpec: "@openclaw/discord" } },
         },
         {
           origin: "bundled",
@@ -50,8 +50,8 @@ describe("bundled plugin sources", () => {
     });
 
     loadPluginManifestMock.mockImplementation((rootDir: string) => {
-      if (rootDir === "/app/extensions/feishu") {
-        return { ok: true, manifest: { id: "feishu" } };
+      if (rootDir === "/app/extensions/discord") {
+        return { ok: true, manifest: { id: "discord" } };
       }
       if (rootDir === "/app/extensions/msteams") {
         return { ok: true, manifest: { id: "msteams" } };
@@ -65,11 +65,11 @@ describe("bundled plugin sources", () => {
 
     const map = resolveBundledPluginSources({});
 
-    expect(Array.from(map.keys())).toEqual(["feishu", "msteams"]);
-    expect(map.get("feishu")).toEqual({
-      pluginId: "feishu",
-      localPath: "/app/extensions/feishu",
-      npmSpec: "@openclaw/feishu",
+    expect(Array.from(map.keys())).toEqual(["discord", "msteams"]);
+    expect(map.get("discord")).toEqual({
+      pluginId: "discord",
+      localPath: "/app/extensions/discord",
+      npmSpec: "@openclaw/discord",
     });
   });
 
@@ -78,20 +78,20 @@ describe("bundled plugin sources", () => {
       candidates: [
         {
           origin: "bundled",
-          rootDir: "/app/extensions/feishu",
-          packageName: "@openclaw/feishu",
-          packageManifest: { install: { npmSpec: "@openclaw/feishu" } },
+          rootDir: "/app/extensions/discord",
+          packageName: "@openclaw/discord",
+          packageManifest: { install: { npmSpec: "@openclaw/discord" } },
         },
       ],
       diagnostics: [],
     });
-    loadPluginManifestMock.mockReturnValue({ ok: true, manifest: { id: "feishu" } });
+    loadPluginManifestMock.mockReturnValue({ ok: true, manifest: { id: "discord" } });
 
-    const resolved = findBundledPluginByNpmSpec({ spec: "@openclaw/feishu" });
+    const resolved = findBundledPluginByNpmSpec({ spec: "@openclaw/discord" });
     const missing = findBundledPluginByNpmSpec({ spec: "@openclaw/not-found" });
 
-    expect(resolved?.pluginId).toBe("feishu");
-    expect(resolved?.localPath).toBe("/app/extensions/feishu");
+    expect(resolved?.pluginId).toBe("discord");
+    expect(resolved?.localPath).toBe("/app/extensions/discord");
     expect(missing).toBeUndefined();
   });
 });

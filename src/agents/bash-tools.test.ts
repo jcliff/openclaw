@@ -534,6 +534,7 @@ describe("exec session key injection", () => {
   });
 
   it("does not inject OPENCLAW_SESSION_KEY when sessionKey is absent", async () => {
+    delete process.env.OPENCLAW_SESSION_KEY;
     const tool = createTestExecTool();
     const result = await executeExecCommand(
       tool,

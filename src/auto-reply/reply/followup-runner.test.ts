@@ -37,7 +37,6 @@ const ROUTABLE_TEST_CHANNELS = new Set([
   "signal",
   "imessage",
   "whatsapp",
-  "feishu",
 ]);
 
 beforeEach(() => {
@@ -389,9 +388,9 @@ describe("createFollowupRunner messaging tool dedupe", () => {
     const runner = createMessagingDedupeRunner(onBlockReply);
 
     await runner({
-      ...baseQueuedRun(" Feishu "),
-      originatingChannel: "FEISHU",
-      originatingTo: "ou_abc123",
+      ...baseQueuedRun(" Discord "),
+      originatingChannel: "DISCORD",
+      originatingTo: "channel:C1",
     } as FollowupRun);
 
     expect(routeReplyMock).toHaveBeenCalled();

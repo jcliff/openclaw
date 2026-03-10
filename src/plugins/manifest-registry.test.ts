@@ -87,12 +87,12 @@ describe("loadPluginManifestRegistry", () => {
 
   it("suppresses duplicate warning when candidates share the same physical directory via symlink", () => {
     const realDir = makeTempDir();
-    const manifest = { id: "feishu", configSchema: { type: "object" } };
+    const manifest = { id: "discord", configSchema: { type: "object" } };
     writeManifest(realDir, manifest);
 
     // Create a symlink pointing to the same directory
     const symlinkParent = makeTempDir();
-    const symlinkPath = path.join(symlinkParent, "feishu-link");
+    const symlinkPath = path.join(symlinkParent, "discord-link");
     try {
       fs.symlinkSync(realDir, symlinkPath, "junction");
     } catch {
@@ -103,12 +103,12 @@ describe("loadPluginManifestRegistry", () => {
 
     const candidates: PluginCandidate[] = [
       createPluginCandidate({
-        idHint: "feishu",
+        idHint: "discord",
         rootDir: realDir,
         origin: "bundled",
       }),
       createPluginCandidate({
-        idHint: "feishu",
+        idHint: "discord",
         rootDir: symlinkPath,
         origin: "bundled",
       }),
