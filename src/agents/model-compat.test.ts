@@ -226,4 +226,58 @@ describe("resolveForwardCompatModel", () => {
     const model = resolveForwardCompatModel("openai", "claude-opus-4-6", registry);
     expect(model).toBeUndefined();
   });
+
+  it("resolves openai-codex gpt-5.4 via gpt-5.3-codex template", () => {
+    const registry = createRegistry({
+      "openai-codex/gpt-5.3-codex": createTemplateModel("openai-codex", "gpt-5.3-codex"),
+    });
+    const model = resolveForwardCompatModel("openai-codex", "gpt-5.4", registry);
+    expect(model?.id).toBe("gpt-5.4");
+    expect(model?.provider).toBe("openai-codex");
+    expect(model?.contextWindow).toBe(1_050_000);
+    expect(model?.maxTokens).toBe(128_000);
+  });
+
+  it("resolves openai-codex gpt-5.4 via gpt-5.2-codex fallback", () => {
+    const registry = createRegistry({
+      "openai-codex/gpt-5.2-codex": createTemplateModel("openai-codex", "gpt-5.2-codex"),
+    });
+    const model = resolveForwardCompatModel("openai-codex", "gpt-5.4", registry);
+    expect(model?.id).toBe("gpt-5.4");
+    expect(model?.provider).toBe("openai-codex");
+  });
+
+  it("resolves openai-codex gpt-5.4 with hardcoded fallback when no template", () => {
+    const registry = createRegistry({});
+    const model = resolveForwardCompatModel("openai-codex", "gpt-5.4", registry);
+    expect(model?.id).toBe("gpt-5.4");
+    expect(model?.api).toBe("openai-codex-responses");
+    expect(model?.contextWindow).toBe(1_050_000);
+  });
+
+  it("resolves openai gpt-5.4 via gpt-5.2 template", () => {
+    const registry = createRegistry({
+      "openai/gpt-5.2": createTemplateModel("openai", "gpt-5.2"),
+    });
+    const model = resolveForwardCompatModel("openai", "gpt-5.4", registry);
+    expect(model?.id).toBe("gpt-5.4");
+    expect(model?.provider).toBe("openai");
+    expect(model?.contextWindow).toBe(1_050_000);
+  });
+
+  it("resolves openai gpt-5.4-pro preferring pro template", () => {
+    const registry = createRegistry({
+      "openai/gpt-5.2": createTemplateModel("openai", "gpt-5.2"),
+      "openai/gpt-5.2-pro": createTemplateModel("openai", "gpt-5.2-pro"),
+    });
+    const model = resolveForwardCompatModel("openai", "gpt-5.4-pro", registry);
+    expect(model?.id).toBe("gpt-5.4-pro");
+    expect(model?.provider).toBe("openai");
+  });
+
+  it("does not resolve github-copilot gpt-5.4 via codex fallback", () => {
+    const registry = createRegistry({});
+    const model = resolveForwardCompatModel("github-copilot", "gpt-5.4", registry);
+    expect(model).toBeUndefined();
+  });
 });
