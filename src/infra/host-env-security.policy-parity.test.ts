@@ -19,9 +19,13 @@ function parseSwiftStringArray(source: string, marker: string): string[] {
 }
 
 describe("host env security policy parity", () => {
-  it("keeps generated macOS host env policy in sync with shared JSON policy", () => {
+  it("keeps host env policy in sync with any platform bindings", () => {
     const repoRoot = process.cwd();
     const policyPath = path.join(repoRoot, "src/infra/host-env-security-policy.json");
+
+    // Platform app bindings (macOS) were removed from this fork (apps/ deleted).
+    // Keep the JSON policy as the single source of truth and do not fail tests
+    // when platform-specific generated sources are absent.
     const generatedSwiftPath = path.join(
       repoRoot,
       "apps/macos/Sources/OpenClaw/HostEnvSecurityPolicy.generated.swift",
@@ -32,6 +36,13 @@ describe("host env security policy parity", () => {
     );
 
     const policy = JSON.parse(fs.readFileSync(policyPath, "utf8")) as HostEnvSecurityPolicy;
+    if (!fs.existsSync(generatedSwiftPath) || !fs.existsSync(sanitizerSwiftPath)) {
+      // No platform bindings to validate.
+      expect(policy.blockedKeys.length).toBeGreaterThan(0);
+      expect(policy.blockedPrefixes.length).toBeGreaterThan(0);
+      return;
+    }
+
     const generatedSource = fs.readFileSync(generatedSwiftPath, "utf8");
     const sanitizerSource = fs.readFileSync(sanitizerSwiftPath, "utf8");
 
