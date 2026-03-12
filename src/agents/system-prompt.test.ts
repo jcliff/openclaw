@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SILENT_REPLY_TOKEN } from "../auto-reply/tokens.js";
 import { typedCases } from "../test-utils/typed-cases.js";
@@ -144,6 +146,71 @@ describe("buildAgentSystemPrompt", () => {
 
     expect(prompt).toContain("## Skills (mandatory)");
     expect(prompt).toContain("<available_skills>");
+  });
+
+  it("prints system prompt size metrics (baseline)", () => {
+    const params: Parameters<typeof buildAgentSystemPrompt>[0] = {
+      workspaceDir: "/tmp/openclaw",
+      promptMode: "full",
+      ownerNumbers: ["+123"],
+      ownerDisplay: "hash",
+      ownerDisplaySecret: "test-secret",
+      toolNames: [
+        "read",
+        "write",
+        "edit",
+        "exec",
+        "process",
+        "web_search",
+        "web_fetch",
+        "browser",
+        "canvas",
+        "nodes",
+        "cron",
+        "message",
+        "gateway",
+        "sessions_spawn",
+        "sessions_list",
+        "sessions_history",
+        "sessions_send",
+        "subagents",
+        "session_status",
+        "image",
+      ],
+      skillsPrompt:
+        "<available_skills>\n  <skill>\n    <name>demo</name>\n  </skill>\n</available_skills>",
+      heartbeatPrompt: "ping",
+      docsPath: "/tmp/openclaw/docs",
+      ttsHint: "Voice (TTS) is enabled.",
+      runtimeInfo: {
+        agentId: "squall",
+        host: "the-ponderosa",
+        os: "linux",
+        arch: "x64",
+        node: "v22.22.1",
+        model: "openai-codex/gpt-5.2",
+        defaultModel: "openai-codex/gpt-5.2",
+        shell: "bash",
+        channel: "discord",
+        capabilities: [],
+        repoRoot: "/tmp/openclaw",
+      },
+    };
+
+    const prompt = buildAgentSystemPrompt(params);
+    const lines = prompt.split("\n").length;
+    const bytes = Buffer.byteLength(prompt, "utf8");
+    const chars = prompt.length;
+    const estTokens = Math.ceil(chars / 4);
+
+    const line = `PROMPT_SIZE mode=full chars=${chars} bytes=${bytes} lines=${lines} estTokens=${estTokens}`;
+
+    // NOTE: vitest captures stdout; persist to an artifact file so CI/Buildbot can scrape it.
+    const outDir = path.join(process.cwd(), ".artifacts", "prompt");
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, "system-prompt-size.txt"), `${line}\n`);
+
+    expect(chars).toBeGreaterThan(1000);
   });
 
   it("omits skills in minimal prompt mode when skillsPrompt is absent", () => {
